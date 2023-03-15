@@ -12,12 +12,14 @@ namespace EvolutionTest
 		private double photosynthesis;
 		private double attack;
 		private double multiply;
+		private double energyToGive;
 
 		public BotDirection Direction => (BotDirection)Math.Truncate(Neuron.Sigmoid(direction) / (1.0f / (double)Enum.GetValues(typeof(BotDirection)).Length));
 		public bool Move => move > 0;
 		public bool Photosynthesis => photosynthesis > 0;
 		public bool Attack => attack > 0;
-		public int Multiply => (int)multiply; //(int)Math.Truncate(multiply / (1.0f / 10.0f));
+		public int Multiply => (int)multiply;
+		public double EnergyToGive => Neuron.Sigmoid(energyToGive);
 
 		public BrainOutput(double[] outputs)
 		{

@@ -16,7 +16,7 @@
 		<Border Grid.Column="1" Background="LightGray">
 			<StackPanel>
 				<StackPanel Orientation="Horizontal" Margin="2">
-					<TextBlock Text="Epoch: " FontSize="16"/>
+					<TextBlock Text="Steps: " FontSize="16"/>
 					<TextBlock Text="{Binding YearsCount}" FontSize="16"/>
 				</StackPanel>
 				<StackPanel Orientation="Horizontal" Margin="2">
@@ -24,7 +24,6 @@
 					<TextBlock Text="{Binding EntitiesCount}" FontSize="16"/>
 				</StackPanel>
 			</StackPanel>
-
 		</Border>
 	</Grid>
 </Window>

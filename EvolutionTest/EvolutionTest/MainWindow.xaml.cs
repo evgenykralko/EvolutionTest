@@ -84,7 +84,7 @@ namespace EvolutionTest
 
 			HashSet<Cell> bots = new HashSet<Cell>();
 
-			for (int i = 0; i < 100; i++)
+			for (int i = 0; i < 10000; i++)
 			{
 				Cell position = new Cell(
 					MyWorld.RndGenerator.Next(0, MyWorld.Width),
