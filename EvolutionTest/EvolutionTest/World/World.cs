@@ -9,6 +9,9 @@ namespace EvolutionTest
 {
 	public class World
 	{
+		private bool LoopX;
+		private bool LoopY;
+		
 		public int Width { get; private set; }
 		public int Height { get; private set; }
 
@@ -20,20 +23,22 @@ namespace EvolutionTest
 		public event EntityMovedEventHandler EntityMoved;
 		public event EntityRemovedEventHandler EntityRemoved;
 
-		public World(int width, int height)
+		public World(int width, int height, bool loopX, bool loopY)
 		{
 			Width = width;
 			Height = height;
 
+			LoopX = loopX;
+			LoopY = loopY;
+
 			Entities = new Entity[height, width];
 			Bots = new HashSet<Entity>();
 		}
-
 		#region Actions
 
 		public void Tick()
 		{
-			foreach (Bot bot in Bots.ToArray())
+			foreach (Bot bot in Bots.OrderByDescending(row => row.Energy).ToArray())
 			{
 				if (Bots.Contains(bot))
 				{
@@ -81,9 +86,23 @@ namespace EvolutionTest
 			return dice < percent;
 		}
 
-		public bool IsInBounds(Cell cell)
+		public bool IsInBounds(ref Cell cell)
 		{
+			int x = LoopX ? LoopCoordinate(cell.X, true) : cell.X;
+			int y = LoopY ? LoopCoordinate(cell.Y, false) : cell.Y;
+			cell = new Cell(x, y);
+
 			return cell.X >= 0 && cell.X < Width && cell.Y >= 0 && cell.Y < Height;
+		}
+
+		private int LoopCoordinate(int coordinate, bool isX)
+		{
+			int max = isX ? Width : Height;
+			return coordinate < 0
+				? max - 1
+				: coordinate >= max
+					? 0
+					: coordinate;
 		}
 
 		#endregion

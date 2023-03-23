@@ -18,89 +18,90 @@ using System.Windows.Shapes;
 using System.Timers;
 using Timer = System.Timers.Timer;
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 
 namespace EvolutionTest
 {
 	/// <summary>
 	/// Interaction logic for MainWindow.xaml
 	/// </summary>
-	public partial class MainWindow : Window, INotifyPropertyChanged
+	public partial class MainWindow : Window
 	{
-		public event PropertyChangedEventHandler PropertyChanged;
-		protected virtual void OnPropertyChanged(string propertyName)
-		{
-			PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-		}
+		public const int ElementWidth = 6;
+		public const int ElementHeight = 6;
+		public const int ElementCount = 18000;
 
-		public const int elementWidth = 8;
-		public const int elementHeight = 8;
-
-		public const int worldWidth = 225;
-		public const int worldHeight = 125;
+		public const int WorldWidth = 180;
+		public const int WorldHeight = 100;
 
 		public World MyWorld;
-		public ConcurrentQueue<Action> ActionsPerTick = new ConcurrentQueue<Action>();
+		public Queue<Action> TickActions = new Queue<Action>();
 		Dictionary<Entity, UIElement> UIElementsDict = new Dictionary<Entity, UIElement>();
 
-		private int yearsCount = 0;
-		public int YearsCount 
-		{
-			get 
-			{ 
-				return yearsCount; 
-			}
-			set 
-			{
-				yearsCount = value;
-				OnPropertyChanged(nameof(YearsCount)); 
-			}
-		}
+		public int YearsCount { get; set; }
+		public int EntitiesCount { get; set; }
 
-		private int entitiesCount = 0;
-		public int EntitiesCount
+		public enum ColorModes { Normal, Predators, Energy }
+		public ColorModes ColorMode { get; set; } = ColorModes.Normal;
+
+		private List<ColorModes> colorModesList;
+		public List<ColorModes> ColorModesList
 		{
 			get
 			{
-				return entitiesCount;
-			}
-			set
-			{
-				entitiesCount = value;
-				OnPropertyChanged(nameof(EntitiesCount));
+				if (colorModesList == null)
+				{
+					colorModesList = new List<ColorModes>();
+					foreach (ColorModes mode in Enum.GetValues(typeof(ColorModes)))
+					{
+						colorModesList.Add(mode);
+					}
+				}
+
+				return colorModesList;
 			}
 		}
 
 		public MainWindow()
 		{
 			InitializeComponent();
-			MainForm.DataContext = this;
-			canvas.Background = Brushes.AliceBlue;
 
-			MyWorld = new World(worldWidth, worldHeight);
+			MainForm.DataContext = this;
+			canvas.Width = WorldWidth * ElementWidth;
+			canvas.Height = WorldHeight * ElementHeight;
+
+			MyWorld = new World(WorldWidth, WorldHeight, loopX: true, loopY: true);
 
 			MyWorld.EntityAdded += MyWorld_EntityAdded;
 			MyWorld.EntityMoved += MyWorld_EntityMoved;
 			MyWorld.EntityRemoved += MyWorld_EntityRemoved;
 
-			HashSet<Cell> bots = new HashSet<Cell>();
+			HashSet<Cell> botCells = new HashSet<Cell>();
 
-			for (int i = 0; i < 10000; i++)
+			int count = 0;
+			while (count < ElementCount)
 			{
 				Cell position = new Cell(
-					MyWorld.RndGenerator.Next(0, MyWorld.Width),
-					MyWorld.RndGenerator.Next(0, MyWorld.Height));
+					MyWorld.RndGenerator.Next(MyWorld.Width),
+					MyWorld.RndGenerator.Next(MyWorld.Height));
 
-				if (bots.Add(position))
+				if (botCells.Add(position))
 				{
-					Color color = Color.FromRgb((byte)MyWorld.RndGenerator.Next(256), (byte)MyWorld.RndGenerator.Next(256), (byte)MyWorld.RndGenerator.Next(256));
+					Color color = Color.FromRgb(
+						(byte)MyWorld.RndGenerator.Next(256),
+						(byte)MyWorld.RndGenerator.Next(256),
+						(byte)MyWorld.RndGenerator.Next(256));
 					Bot bot = new Bot(MyWorld, position, color);
 					MyWorld.AddEntity(bot, position);
+					count++;
 				}
 			}
 
+			botCells.Clear();
+
 			DrawWorld();
 
-			Task.Run(() =>
+			_ = Task.Run(() =>
 			{
 				while (true)
 				{
@@ -123,84 +124,60 @@ namespace EvolutionTest
 			});
 		}
 
-		private byte Darker(byte part)
-		{
-			int color = part;
-			color += 50;
-			if (color > 255)
-			{
-				color = 255;
-			}
-
-			return (byte)color;
-		}
+		#region World Actions
 
 		private void MyWorld_EntityAdded(object sender, EntityAddedEventArgs e)
 		{
 			Action action = new Action(() =>
 			{
-				Color border = Color.FromArgb(e.Obj.Background.A, Darker(e.Obj.Background.R), Darker(e.Obj.Background.G), Darker(e.Obj.Background.B));
-
-				Ellipse ellipse = new Ellipse();
-				ellipse.Fill = new SolidColorBrush(e.Obj.Background);
-				ellipse.Stroke = new SolidColorBrush(border);
-				ellipse.Width = elementWidth;
-				ellipse.Height = elementHeight;
-
-				Canvas.SetLeft(ellipse, e.Position.X * elementWidth);
-				Canvas.SetTop(ellipse, e.Position.Y * elementHeight);
-				
-				canvas.Children.Add(ellipse);
-
-				lock (UIElementsDict)
+				BotControl control = new BotControl(e.Obj)
 				{
-					UIElementsDict.Add(e.Obj, ellipse);
-				}
+					DataContext = this,
+					Width = ElementWidth,
+					Height = ElementHeight
+				};
+
+				Canvas.SetLeft(control, e.Position.X * ElementWidth);
+				Canvas.SetTop(control, e.Position.Y * ElementHeight);
+
+				canvas.Children.Add(control);
+				UIElementsDict.Add(e.Obj, control);
 			});
 
-			ActionsPerTick.Enqueue(action);
+			TickActions.Enqueue(action);
 		}
 
 		private void MyWorld_EntityMoved(object sender, EntityMovedEventArgs e)
 		{
 			Action action = new Action(() =>
 			{
-				lock (UIElementsDict)
+				UIElement element;
+				if (UIElementsDict.TryGetValue(e.Obj, out element))
 				{
-					UIElement element;
-					if (UIElementsDict.TryGetValue(e.Obj, out element))
-					{
-						Canvas.SetLeft(element, Canvas.GetLeft(element) + (e.To.X - e.From.X) * elementWidth);
-						Canvas.SetTop(element, Canvas.GetTop(element) + (e.To.Y - e.From.Y) * elementHeight);
-
-						if (element is Rectangle rect)
-						{
-							rect.Fill = new SolidColorBrush(e.Obj.Background);
-						}
-					}
+					Canvas.SetLeft(element, Canvas.GetLeft(element) + (e.To.X - e.From.X) * ElementWidth);
+					Canvas.SetTop(element, Canvas.GetTop(element) + (e.To.Y - e.From.Y) * ElementHeight);
 				}
 			});
 
-			ActionsPerTick.Enqueue(action);
+			TickActions.Enqueue(action);
 		}
 
 		private void MyWorld_EntityRemoved(object sender, EntityRemovedEventArgs e)
 		{
 			Action action = new Action(() =>
 			{
-				lock (UIElementsDict)
+				UIElement element;
+				if (UIElementsDict.TryGetValue(e.Obj, out element))
 				{
-					UIElement element;
-					if (UIElementsDict.TryGetValue(e.Obj, out element))
-					{
-						canvas.Children.Remove(element);
-						UIElementsDict.Remove(e.Obj);
-					}
+					canvas.Children.Remove(element);
+					UIElementsDict.Remove(e.Obj);
 				}
 			});
 
-			ActionsPerTick.Enqueue(action);
+			TickActions.Enqueue(action);
 		}
+
+		#endregion
 
 		public void DrawWorld()
 		{
@@ -208,14 +185,88 @@ namespace EvolutionTest
 
 			App.Current.Dispatcher.Invoke(() =>
 			{
+				edSteps.Text = YearsCount.ToString();
+				edPopulation.Text = EntitiesCount.ToString();
+
 				Action action;
-				while (ActionsPerTick.TryDequeue(out action))
+				while (TickActions.TryDequeue(out action))
 				{
 					action.Invoke();
 				}
 
-				ActionsPerTick.Clear();
+				TickActions.Clear();
 			});
+
+			List<Action> colorModeActions = new List<Action>();
+
+			foreach (var pair in UIElementsDict)
+			{
+				Bot bot = (Bot)pair.Key;
+				BotControl control = (BotControl)pair.Value;
+
+				Color color;
+
+				switch (ColorMode)
+				{
+					case ColorModes.Normal:
+						color = bot.Background;
+						break;
+
+					case ColorModes.Predators:
+						color = bot.IsPredator ? Colors.Red : Colors.Green;
+						break;
+
+					case ColorModes.Energy:
+						Color start = Colors.Gold;
+						Color end = Colors.Firebrick;
+						double lvl = bot.Energy / Bot.MaxEnergy;
+
+						double aStep = end.A - start.A;
+						double rStep = end.R - start.R;
+						double gStep = end.G - start.G;
+						double bStep = end.B - start.B;
+
+						int a = start.A + (int)(aStep * lvl);
+						int r = start.R + (int)(rStep * lvl);
+						int g = start.G + (int)(gStep * lvl);
+						int b = start.B + (int)(bStep * lvl);
+
+						color = Color.FromArgb((byte)a, (byte)r, (byte)g, (byte)b);
+						break;
+				}
+
+				if (control.PrevColor != color)
+				{
+					control.PrevColor = color;
+					colorModeActions.Add(new Action(() => { SetControlColor(control, color); }));
+				}
+			}
+
+			App.Current.Dispatcher.Invoke(() =>
+			{
+				foreach (Action colorModeAction in colorModeActions)
+				{
+					colorModeAction.Invoke();
+				}
+			});
+		}
+
+		private void SetControlColor(BotControl control, Color color)
+		{
+			control.ellipse.Fill = new SolidColorBrush(color);
+			//control.eye.Fill = Brushes.Black;
+
+			if (control.Obj is Bot bot)
+			{
+				//int angle = 360 / 8 * bot.Direction;
+				//control.RenderTransformOrigin = new Point(0.5, 0.5);
+				//control.RenderTransform = new RotateTransform() { Angle = angle };
+			}
+		}
+
+		private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+		{
+			ColorMode = (ColorModes)e.AddedItems[0];
 		}
 	}
 }

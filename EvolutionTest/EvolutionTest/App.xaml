@@ -1,9 +1,10 @@
-﻿<Application x:Class="EvolutionTest.App"
-             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:EvolutionTest"
-             StartupUri="MainWindow.xaml">
-    <Application.Resources>
-         
-    </Application.Resources>
+﻿<Application 
+	x:Class="EvolutionTest.App"
+	xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+	xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+	xmlns:local="clr-namespace:EvolutionTest"
+	StartupUri="MainWindow.xaml">
+	<Application.Resources>
+		<local:BotColorConverter x:Key="botColorConverter"/>
+	</Application.Resources>
 </Application>

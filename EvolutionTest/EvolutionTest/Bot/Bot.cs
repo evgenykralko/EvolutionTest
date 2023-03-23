@@ -8,7 +8,6 @@ using Color = System.Windows.Media.Color;
 
 namespace EvolutionTest
 {
-	public enum BotDirection { Up, UpRight, Right, DownRight, Down, DownLeft, Left, UpLeft };
 	public enum BotAction { Tick, Attack, EatOrganics, Move, Rotate, Multiply };
 
 	public class Bot : Entity
@@ -16,13 +15,27 @@ namespace EvolutionTest
 		public const int InitialEnergy = 200;
 		public const int MaxEnergy = 500;
 		public const int MaxAge = 30;
-		public const int MutationChance = 20;
+		public const int MutationChance = 10;
 
 		public Perceptron Brain;
 		public Bot Parent;
 		public Cell LookAt;
 
-		public BotDirection Direction { get; private set; }
+		public bool IsPredator { get; private set; }
+
+		public int Direction { get; private set; }
+
+		public static readonly Cell[] Directions =
+		{
+			new Cell(0, -1),
+			new Cell(1, -1),
+			new Cell(1, 0),
+			new Cell(1, 1),
+			new Cell(0, 1),
+			new Cell(-1, 1),
+			new Cell(-1, 0),
+			new Cell(-1, -1)
+		};
 
 		public Bot(World liveIn, Cell position, Color color, Bot parent = null, double energy = InitialEnergy)
 			: base(liveIn, position)
@@ -43,7 +56,7 @@ namespace EvolutionTest
 			}
 			else
 			{
-				Direction = (BotDirection)LiveIn.RndGenerator.Next(0, Enum.GetNames(typeof(BotDirection)).Length - 1);
+				Direction = LiveIn.RndGenerator.Next(Directions.Length);
 
 				int[] definition = new int[] { 5, 6, 6, 6 };
 				Brain = new Perceptron(definition);
@@ -60,49 +73,90 @@ namespace EvolutionTest
 				Brain.layers[i].neurons[randomNeuronIndex].SetRandomWeights();
 			}
 
-			//Background = Color.FromRgb((byte)LiveIn.RndGenerator.Next(256), (byte)LiveIn.RndGenerator.Next(256), (byte)LiveIn.RndGenerator.Next(256));
+			//double lvl = LiveIn.RndGenerator.Next(70, 100) / 100.0f;
+			//Background = Color.FromRgb((byte)(Background.R * lvl), (byte)(Background.G * lvl), (byte)(Background.B * lvl));
+			Background = GetColorRandomTint(Background);
+		}
+
+		private Color GetColorRandomTint(Color c)
+		{
+			List<Color> colorList = new List<Color>();
+			
+			Double RGB; Double max;
+			RGB = (int)c.R + (int)c.G + (int)c.B;
+			max = (int)RGB / 38.25;
+			max = Math.Round(max);
+			if (max == 19) max = 20;
+			Double i; Double f;
+			int r; int g; int b;
+			for (i = 1; i < max; i++)
+			{
+				f = 1.0f / max;
+				f = i * f;
+				r = (int)(c.R * f); if (r > 255) r = 255;
+				g = (int)(c.G * f); if (g > 255) g = 255;
+				b = (int)(c.B * f); if (b > 255) b = 255;
+				colorList.Add(Color.FromRgb((byte)r, (byte)g, (byte)b));
+			}
+			max = 20 - max;
+			for (i = 1; i < max; i++)
+			{
+				f = 1 / max;
+				f = i * f;
+				r = (int)((255 - c.R) * f + c.R); if (r > 255) r = 255;
+				g = (int)((255 - c.G) * f + c.G); if (g > 255) g = 255;
+				b = (int)((255 - c.B) * f + c.B); if (b > 255) b = 255;
+				colorList.Add(Color.FromRgb((byte)r, (byte)g, (byte)b));
+			}
+
+			return colorList.Count > 0
+				? colorList[LiveIn.RndGenerator.Next(colorList.Count)]
+				: c;
 		}
 
 		#region Actions
 
 		public override bool Tick()
 		{
-			bool isAlive = 
-				base.Tick() && 
-				Age <= MaxAge && 
-				SpendEnergy(BotAction.Tick);
-			if (!isAlive) return false;
+			bool isAlive;
 
-			BrainOutput output = Think();
-			LookAt = GetLookAt(Position, Direction);
-
-			if (output.Multiply > 0)
+			do
 			{
-				isAlive = Multiply(output.Multiply, output.EnergyToGive);
-				if (!isAlive) return false;
-			}
+				if ((isAlive = base.Tick() && Age <= MaxAge && SpendEnergy(BotAction.Tick)) != true) 
+					break;
 
-			if (output.Attack)
-			{
-				isAlive = Attack();
-				if (!isAlive) return false;
-			}
-			else
-			{
-				isAlive = Rotate(output.Direction);
-				if (!isAlive) return false;
+				BrainOutput output = Think();
+				LookAt = GetLookAt(Position, Direction);
 
-				if (output.Move)
+				if (output.Multiply > 0 && 
+					output.EnergyToGive > 0 && 
+					(isAlive = Multiply(output.Multiply, output.EnergyToGive)) != true) break;
+
+				IsPredator = output.Attack;
+
+				if (output.Attack)
 				{
-					isAlive = Move(true);
-					if (!isAlive) return false;
+					if ((isAlive = Attack()) != true)
+						break;
 				}
-				else if (output.Photosynthesis)
+				else
 				{
-					isAlive = Photosynthesis();
-					if (!isAlive) return false;
+					if ((isAlive = Rotate(output.Direction)) != true)
+						break;
+
+					if (output.Move)
+					{
+						if ((isAlive = Move(spendEnergy: true)) != true)
+						break;
+					}
+					else if (output.Photosynthesis)
+					{
+						if ((isAlive = Photosynthesis()) != true)
+							break;
+					}
 				}
 			}
+			while (false);
 
 			return isAlive;
 		}
@@ -113,77 +167,68 @@ namespace EvolutionTest
 
 			input.Energy = (double)Energy / (double)MaxEnergy;
 			input.Age = (double)Age / (double)MaxAge;
-			input.Direction = (double)Direction / (Enum.GetNames(typeof(BotDirection)).Length - 1);
+			input.Direction = Direction;
 			input.Eye = GetCellNutritionValue(LookAt);
 			input.IsRelative = IsRelative(LookAt);
 
 			return new BrainOutput(Brain.Activate(input.ToArray()));
 		}
 
-		protected virtual bool Multiply(int children, double energyToGive)
+		protected virtual bool Multiply(int childrenCount, double energyToGive)
 		{
-			int multiplyCost = GetActionCost(BotAction.Multiply);
+			bool isAlive;
 
-			double toGiveTotal = (Energy - multiplyCost * children) * energyToGive;
-
-			if (toGiveTotal < 0)
+			do
 			{
-				Energy = 0;
-				return false;
-			}
+				int multiplyCost = GetActionCost(BotAction.Multiply);
+				double toGive = energyToGive / childrenCount;
 
-			if (toGiveTotal < multiplyCost) return false;
+				if ((isAlive = Energy - multiplyCost * childrenCount - energyToGive > 0 && toGive > 1) != true)
+					break;
 
-			double toGive = toGiveTotal / children;
-
-			for (int i = 0; i < children; i++)
-			{
-				Cell freeSpace = FindFreeCellAround(Position, LookAt);
-				if (!freeSpace.IsEmpty())
+				for (int i = 0; i < childrenCount; i++)
 				{
-					Energy -= toGive;
-					SpendEnergy(BotAction.Multiply);
+					Cell freeSpace = FindFreeCellAround(Position, LookAt);
+					if (!freeSpace.IsEmpty())
+					{
+						Energy -= toGive;
+						SpendEnergy(BotAction.Multiply);
 
-					Bot child = new Bot(LiveIn, freeSpace, Background, this, toGive);
-					LiveIn.AddEntity(child, freeSpace);
+						Bot child = new Bot(LiveIn, freeSpace, Background, this, toGive);
+						LiveIn.AddEntity(child, freeSpace);
+					}
+					else break;
 				}
-				else break;
 			}
+			while (false);
 
-			return true;
+			return isAlive;
 		}
 
 		protected virtual bool Attack()
 		{
 			bool isAlive = true;
 
-			if (LiveIn.IsInBounds(LookAt))
+			if (LiveIn.IsInBounds(ref LookAt))
 			{
 				Entity entity = LiveIn.GetEntity(LookAt);
-				if (entity is Bot bot)
+				if (entity is Bot bot && (isAlive = SpendEnergy(BotAction.Attack)))
 				{
-					isAlive = SpendEnergy(BotAction.Attack);
-					if (!isAlive) return false;
-
 					GetEnergy(bot.Energy);
 					bot.Kill();
-
-					Move(false);
+					Move(spendEnergy: false);
 				}
 			}
 
 			return isAlive;
 		}
 
-		protected virtual bool Rotate(BotDirection desiredDirection)
+		protected virtual bool Rotate(int desiredDirection)
 		{
 			bool isAlive = true;
 
-			if (desiredDirection != Direction)
+			if (desiredDirection != Direction && (isAlive = SpendEnergy(BotAction.Rotate)))
 			{
-				isAlive = SpendEnergy(BotAction.Rotate);
-				if (!isAlive) return false;
-
 				Direction = desiredDirection;
 			}
 
@@ -193,18 +238,12 @@ namespace EvolutionTest
 		protected virtual bool Move(bool spendEnergy)
 		{
 			bool isAlive = true;
-			
-			if (LiveIn.IsInBounds(LookAt))
+
+			if (LiveIn.IsInBounds(ref LookAt))
 			{
 				Entity obj = LiveIn.GetEntity(LookAt);
-				if (obj == null)
+				if (obj == null && (isAlive = spendEnergy ? SpendEnergy(BotAction.Move) : true))
 				{
-					if (spendEnergy)
-					{
-						isAlive = SpendEnergy(BotAction.Move);
-						if (!isAlive) return false;
-					}
-
 					Cell from = Position;
 					Cell to = LookAt;
 
@@ -236,12 +275,7 @@ namespace EvolutionTest
 			}
 		}
 
-		protected bool SpendEnergy(BotAction action)
-		{
-			Energy -= GetActionCost(action);
-			bool isAlive = Energy > 0;
-			return isAlive;
-		}
+		protected bool SpendEnergy(BotAction action) => (Energy -= GetActionCost(action)) > 0;
 
 		protected int GetActionCost(BotAction action)
 		{
@@ -270,54 +304,44 @@ namespace EvolutionTest
 
 		protected Cell FindFreeCellAround(Cell point, Cell lookAt)
 		{
-			if (LiveIn.IsInBounds(lookAt))
-			{
-				Entity entity = LiveIn.GetEntity(lookAt);
-				if (entity == null) return lookAt;
-			}
+			Cell freeCell = new Cell(-1, -1);
+			List<Cell> freeCells = new List<Cell>();
 
 			int radius = 1;
 			for (int i = -radius; i <= radius; i++)
 			{
 				for (int j = -radius; j <= radius; j++)
 				{
-					Cell freeCell = new Cell(point.X + i, point.Y + j);
-					if (LiveIn.IsInBounds(freeCell))
+					Cell nextCell = new Cell(point.X + i, point.Y + j);
+					if (LiveIn.IsInBounds(ref nextCell) && LiveIn.GetEntity(nextCell) == null)
 					{
-						Entity entity = LiveIn.GetEntity(freeCell);
-						if (entity == null) return freeCell;
+						freeCells.Add(nextCell);
 					}
 				}
 			}
 
-			return new Cell(-1, -1);
-		}
-
-		protected Cell GetLookAt(Cell cell, BotDirection direction)
-		{
-			int shiftX = 0;
-			int shiftY = 0;
-
-			switch (direction)
+			if (freeCells.Count > 0)
 			{
-				case BotDirection.Left: shiftX = -1; shiftY = 0; break;
-				case BotDirection.UpLeft: shiftX = -1; shiftY = -1; break;
-				case BotDirection.Up: shiftX = 0; shiftY = -1; break;
-				case BotDirection.UpRight: shiftX = 1; shiftY = -1; break;
-				case BotDirection.Right: shiftX = 1; shiftY = 0; break;
-				case BotDirection.DownRight: shiftX = 1; shiftY = 1; break;
-				case BotDirection.Down: shiftX = 0; shiftY = 1; break;
-				case BotDirection.DownLeft: shiftX = -1; shiftY = 1; break;
+				freeCell = freeCells[LiveIn.RndGenerator.Next(freeCells.Count)];
 			}
 
-			return new Cell(cell.X + shiftX, cell.Y + shiftY);
+			return freeCell;
+		}
+
+		protected Cell GetLookAt(Cell cell, int direction)
+		{
+			Cell shift = Directions[direction];
+			int x = cell.X + shift.X;
+			int y = cell.Y + shift.Y;
+
+			return new Cell(x, y);
 		}
 
 		protected double GetCellNutritionValue(Cell cell)
 		{
 			double energy = 0;
 			
-			if (LiveIn.IsInBounds(cell))
+			if (LiveIn.IsInBounds(ref cell))
 			{
 				Entity obj = LiveIn.GetEntity(cell);
 				energy = obj?.Energy ?? 0;
@@ -330,7 +354,7 @@ namespace EvolutionTest
 		{
 			double isRelative = 0;
 			
-			if (LiveIn.IsInBounds(cell) && 
+			if (LiveIn.IsInBounds(ref cell) && 
 				LiveIn.GetEntity(cell) is Bot bot && 
 				bot.Background == Background)
 			{
