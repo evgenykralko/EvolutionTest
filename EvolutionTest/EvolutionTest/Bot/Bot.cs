@@ -14,7 +14,7 @@ namespace EvolutionTest
 	{
 		public const int InitialEnergy = 200;
 		public const int MaxEnergy = 500;
-		public const int MaxAge = 30;
+		public const int MaxAge = 100;
 		public const int MutationChance = 10;
 
 		public Perceptron Brain;

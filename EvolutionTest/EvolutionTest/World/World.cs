@@ -19,10 +19,6 @@ namespace EvolutionTest
 		public Entity[,] Entities;
 		public HashSet<Entity> Bots;
 
-		public event EntityAddedEventHandler EntityAdded;
-		public event EntityMovedEventHandler EntityMoved;
-		public event EntityRemovedEventHandler EntityRemoved;
-
 		public World(int width, int height, bool loopX, bool loopY)
 		{
 			Width = width;
@@ -34,6 +30,7 @@ namespace EvolutionTest
 			Entities = new Entity[height, width];
 			Bots = new HashSet<Entity>();
 		}
+
 		#region Actions
 
 		public void Tick()
@@ -54,7 +51,6 @@ namespace EvolutionTest
 		{
 			Entities[cell.Y, cell.X] = entity;
 			Bots.Add(entity);
-			EntityAdded?.Invoke(this, new EntityAddedEventArgs() { Obj = entity, Position = cell });
 		}
 
 		public Entity GetEntity(Cell cell)
@@ -66,14 +62,12 @@ namespace EvolutionTest
 		{
 			Entities[from.Y, from.X] = null;
 			Entities[to.Y, to.X] = entity;
-			EntityMoved?.Invoke(this, new EntityMovedEventArgs() { Obj = entity, From = from, To = to });
 		}
 
 		public void RemoveEntity(Entity entity, Cell cell)
 		{
 			Entities[cell.Y, cell.X] = null;
 			Bots.Remove(entity);
-			EntityRemoved?.Invoke(this, new EntityRemovedEventArgs() { Obj = entity, Position = cell });
 		}
 
 		#endregion

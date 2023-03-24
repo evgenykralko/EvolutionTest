@@ -20,13 +20,18 @@ namespace EvolutionTest
 	public partial class BotControl : UserControl
 	{
 		public Entity Obj { get; set; }
+		
 		public Color PrevColor { get; set; }
+		public int PrevDirection { get; set; }
+		public int PrevAge { get; set; }
 
 		public BotControl(Entity bot)
 			: base()
 		{
 			Obj = bot;
 			InitializeComponent();
+
+			ellipse.Fill = new SolidColorBrush(Obj.Background);
 		}
 	}
 }
