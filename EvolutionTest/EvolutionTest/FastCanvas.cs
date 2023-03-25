@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -11,30 +12,51 @@ namespace EvolutionTest
 	public class FastCanvas : Canvas
 	{
 		private HashSet<Entity> entities;
-		private int elementRadius;
+		private double elementRadius;
+		private Brush origBackground;
 
-		public void Initialize(HashSet<Entity> entities, int worldWidth, int worldHeight, int elementRadius)
+		private bool refreshRequested = false;
+
+		public FastCanvas() : base() 
 		{
-			this.entities = entities;
+		}
+
+		public void Initialize(double elementRadius, out World myWorld, out int worldWidth, out int worldHeight)
+		{
+			origBackground = Background;
 			this.elementRadius = elementRadius;
 
-			Width = worldWidth * elementRadius * 2;
-			Height = worldHeight * elementRadius * 2;
+			worldWidth = (int)(ActualWidth / elementRadius / 2);
+			worldHeight = (int)(ActualHeight / elementRadius / 2); ;
+			myWorld = new World(worldWidth, worldHeight, loopX: true, loopY: true);
+
+			this.entities = myWorld.Bots;
+		}
+
+		public void Refresh()
+		{
+			refreshRequested = true;
+			InvalidateVisual();
 		}
 
 		protected override void OnRender(DrawingContext dc)
 		{
 			base.OnRender(dc);
+			if (DesignerProperties.GetIsInDesignMode(this) || !refreshRequested) return;
+
 			foreach (Bot bot in entities)
 			{
 				Point point = new Point(bot.Position.X * elementRadius * 2 + elementRadius, bot.Position.Y * elementRadius * 2 + elementRadius);
 				dc.DrawEllipse(new SolidColorBrush(GetBotColorByMode(bot)), null, point, elementRadius, elementRadius);
 			}
+
+			refreshRequested = false;
 		}
 
 		private Color GetBotColorByMode(Bot bot)
 		{
 			Color color;
+			Brush background = origBackground;
 			MainWindow window = (App.Current.MainWindow as MainWindow);
 
 			switch (window.ColorMode)
@@ -54,8 +76,30 @@ namespace EvolutionTest
 				case ColorModes.Age:
 					color = GetColorByLevel(Colors.LightGreen, Colors.SteelBlue, (double)bot.Age / (double)Bot.MaxAge);
 					break;
+
+				case ColorModes.Mobility:
+					color = bot.IsMobile ? Colors.Coral : Colors.Gray;
+					break;
+
+				case ColorModes.Direction:
+					Color[] colors = new[]
+					{
+						Colors.Aquamarine,
+						Colors.Aqua,
+						Colors.Cyan,
+						Colors.Turquoise,
+						Colors.SpringGreen,
+						Colors.MediumTurquoise,
+						Colors.Gray,
+						Colors.MediumSpringGreen,
+					};
+
+					color = colors[bot.LiveIn.RndGenerator.Next(bot.Direction)];
+					background = Brushes.DodgerBlue;
+					break;
 			}
 
+			Background = background;
 			return color;
 		}
 

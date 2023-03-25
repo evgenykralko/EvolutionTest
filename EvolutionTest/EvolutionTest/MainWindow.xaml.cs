@@ -25,18 +25,15 @@ namespace EvolutionTest
 {
 	public partial class MainWindow : Window
 	{
-		public const int ElementRadius = 2;
-		public const int ElementCount = 10000;
-
-		public const int WorldWidth = 440;
-		public const int WorldHeight = 258;
+		public const double ElementRadius = 2;
+		public const int InitElementsCount = 10000;
 
 		public World MyWorld;
 
 		public int YearsCount { get; set; }
 		public int EntitiesCount { get; set; }
 
-		public enum ColorModes { Normal, Predators, Energy, Age }
+		public enum ColorModes { Normal, Predators, Energy, Age, Mobility, Direction }
 		public ColorModes ColorMode { get; set; } = ColorModes.Normal;
 
 		private List<ColorModes> colorModesList;
@@ -61,14 +58,18 @@ namespace EvolutionTest
 		{
 			InitializeComponent();
 			MainForm.DataContext = this;
+		}
 
-			MyWorld = new World(WorldWidth, WorldHeight, loopX: true, loopY: true);
-			canvas.Initialize(MyWorld.Bots, WorldWidth, WorldHeight, ElementRadius);
+		private void MainForm_Loaded(object sender, RoutedEventArgs e)
+		{
+			int worldWidth;
+			int worldHeight;
+			canvas.Initialize(ElementRadius, out MyWorld, out worldWidth, out worldHeight);
 
 			HashSet<Cell> botCells = new HashSet<Cell>();
 
 			int count = 0;
-			while (count < ElementCount)
+			while (count < InitElementsCount)
 			{
 				Cell position = new Cell(
 					MyWorld.RndGenerator.Next(MyWorld.Width),
@@ -92,25 +93,26 @@ namespace EvolutionTest
 			{
 				while (true)
 				{
-					LogDebugInfo(new Action(() => MyWorld.Tick()), "Tick");
-					LogDebugInfo(new Action(() =>
+					LogDebugInfo(() => MyWorld.Tick(), "Tick");
+					LogDebugInfo(() =>
 					{
 						App.Current.Dispatcher.Invoke(() =>
 						{
-							canvas.InvalidateVisual();
+							canvas.Refresh();
 
+							edSize.Text = $"{worldWidth}x{worldHeight} ({worldWidth * worldHeight})";
 							edSteps.Text = (++YearsCount).ToString();
 							edPopulation.Text = MyWorld.Bots.Count.ToString();
 						});
 
-						// To wait until rendering for canvas is done.
-						App.Current.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() => { })).Wait();
-					}), "Rendering");
+						// Wait until rendering for canvas is done.
+						App.Current.Dispatcher.Invoke(DispatcherPriority.SystemIdle, new Action(() => { }));
+					}, "Rendering");
 				}
 			});
 		}
 
-		private void LogDebugInfo(Action action, string message)
+		public static void LogDebugInfo(Action action, string message)
 		{
 			DateTime startTime = DateTime.Now;
 			action.Invoke();
@@ -121,6 +123,18 @@ namespace EvolutionTest
 		private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			ColorMode = (ColorModes)e.AddedItems[0];
+		}
+
+		private void Button_Click(object sender, RoutedEventArgs e)
+		{
+			string showText = "▲";
+			string hideText = "▼";
+			
+			Button button = sender as Button;
+			bool hide = panel.Visibility == Visibility.Visible;
+
+			button.Content = hide ? showText : hideText;
+			panel.Visibility = hide ? Visibility.Collapsed : Visibility.Visible;
 		}
 	}
 }

@@ -22,6 +22,7 @@ namespace EvolutionTest
 		public Cell LookAt;
 
 		public bool IsPredator { get; private set; }
+		public bool IsMobile { get; private set; }
 
 		public int Direction { get; private set; }
 
@@ -132,7 +133,8 @@ namespace EvolutionTest
 					output.EnergyToGive > 0 && 
 					(isAlive = Multiply(output.Multiply, output.EnergyToGive)) != true) break;
 
-				IsPredator = output.Attack;
+				IsPredator = false;
+				IsMobile = false;
 
 				if (output.Attack)
 				{
@@ -208,15 +210,23 @@ namespace EvolutionTest
 		protected virtual bool Attack()
 		{
 			bool isAlive = true;
+			IsPredator = true;
 
 			if (LiveIn.IsInBounds(ref LookAt))
 			{
 				Entity entity = LiveIn.GetEntity(LookAt);
-				if (entity is Bot bot && (isAlive = SpendEnergy(BotAction.Attack)))
+				if (entity is Bot bot)
 				{
-					GetEnergy(bot.Energy);
-					bot.Kill();
-					Move(spendEnergy: false);
+					if (isAlive = SpendEnergy(BotAction.Attack))
+					{
+						GetEnergy(bot.Energy);
+						bot.Kill();
+						Move(spendEnergy: false);
+					}
+				}
+				else
+				{
+					isAlive = Move(spendEnergy: true);
 				}
 			}
 
@@ -238,6 +248,7 @@ namespace EvolutionTest
 		protected virtual bool Move(bool spendEnergy)
 		{
 			bool isAlive = true;
+			IsMobile = true;
 
 			if (LiveIn.IsInBounds(ref LookAt))
 			{
