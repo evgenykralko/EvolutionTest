@@ -201,7 +201,7 @@
 		</Style>
 	</Window.Resources>
 	<Grid>
-		<local:FastCanvas
+		<Canvas
 			x:Name="canvas"
 			VerticalAlignment="Stretch"
 			HorizontalAlignment="Stretch"
@@ -234,6 +234,6 @@
 				</StackPanel>
 			</StackPanel>
 		</Border>
-		<Button Click="Button_Click" VerticalAlignment="Bottom" HorizontalAlignment="Center">▼</Button>
+		<Button Click="Button_Click" VerticalAlignment="Bottom" HorizontalAlignment="Center" Padding="10,0">▼</Button>
 	</Grid>
 </Window>

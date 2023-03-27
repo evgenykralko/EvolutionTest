@@ -74,45 +74,8 @@ namespace EvolutionTest
 				Brain.layers[i].neurons[randomNeuronIndex].SetRandomWeights();
 			}
 
-			//double lvl = LiveIn.RndGenerator.Next(70, 100) / 100.0f;
-			//Background = Color.FromRgb((byte)(Background.R * lvl), (byte)(Background.G * lvl), (byte)(Background.B * lvl));
-			Background = GetColorRandomTint(Background);
-		}
-
-		private Color GetColorRandomTint(Color c)
-		{
-			List<Color> colorList = new List<Color>();
-			
-			Double RGB; Double max;
-			RGB = (int)c.R + (int)c.G + (int)c.B;
-			max = (int)RGB / 38.25;
-			max = Math.Round(max);
-			if (max == 19) max = 20;
-			Double i; Double f;
-			int r; int g; int b;
-			for (i = 1; i < max; i++)
-			{
-				f = 1.0f / max;
-				f = i * f;
-				r = (int)(c.R * f); if (r > 255) r = 255;
-				g = (int)(c.G * f); if (g > 255) g = 255;
-				b = (int)(c.B * f); if (b > 255) b = 255;
-				colorList.Add(Color.FromRgb((byte)r, (byte)g, (byte)b));
-			}
-			max = 20 - max;
-			for (i = 1; i < max; i++)
-			{
-				f = 1 / max;
-				f = i * f;
-				r = (int)((255 - c.R) * f + c.R); if (r > 255) r = 255;
-				g = (int)((255 - c.G) * f + c.G); if (g > 255) g = 255;
-				b = (int)((255 - c.B) * f + c.B); if (b > 255) b = 255;
-				colorList.Add(Color.FromRgb((byte)r, (byte)g, (byte)b));
-			}
-
-			return colorList.Count > 0
-				? colorList[LiveIn.RndGenerator.Next(colorList.Count)]
-				: c;
+			double factor = LiveIn.RndGenerator.Next(-30, 30) / 100.0;
+			Background = Utils.ChangeColorBrightness(Background, factor);
 		}
 
 		#region Actions
