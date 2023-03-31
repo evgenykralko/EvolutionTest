@@ -15,16 +15,22 @@ namespace EvolutionTest
 		public const int InitialEnergy = 200;
 		public const int MaxEnergy = 500;
 		public const int MaxAge = 100;
-		public const int MutationChance = 10;
+		public const int MutationChance = 30;
 
 		public Perceptron Brain;
 		public Bot Parent;
 		public Cell LookAt;
 
-		public bool IsPredator { get; private set; }
+		private double predationEnergy = 0;
+		public bool IsPredator => predationEnergy > 0;
 		public bool IsMobile { get; private set; }
 
+		public Guid FamilyID { get; private set; }
 		public int Direction { get; private set; }
+		public double Attacked { get; private set; } = 0;
+		public int AttackedDirection { get; private set; } = -1;
+
+		private int mutationCount = 0;
 
 		public static readonly Cell[] Directions =
 		{
@@ -49,18 +55,26 @@ namespace EvolutionTest
 				Parent = parent;
 				Brain = parent.Brain.Copy();
 				Direction = parent.Direction;
+				FamilyID = parent.FamilyID;
+				mutationCount = parent.mutationCount;
 
 				if (LiveIn.RollDice(MutationChance))
 				{
 					Mutate();
+					if (++mutationCount >= 10)
+					{
+						mutationCount = 0;
+						FamilyID = new Guid();
+					}
 				}
 			}
 			else
 			{
 				Direction = LiveIn.RndGenerator.Next(Directions.Length);
+				FamilyID = Guid.NewGuid();
 
-				int[] definition = new int[] { 5, 6, 6, 6 };
-				Brain = new Perceptron(definition);
+				int[] definition = new int[] { 6, 7, 7, 6 };
+				Brain = new Perceptron(definition, liveIn.RndGenerator);
 			}
 		}
 
@@ -92,34 +106,34 @@ namespace EvolutionTest
 				BrainOutput output = Think();
 				LookAt = GetLookAt(Position, Direction);
 
-				if (output.Multiply > 0 && 
-					output.EnergyToGive > 0 && 
-					(isAlive = Multiply(output.Multiply, output.EnergyToGive)) != true) break;
-
-				IsPredator = false;
 				IsMobile = false;
 
-				if (output.Attack)
+				if (output.Multiply > 0 && output.EnergyToGive > 0)
+				{
+					if ((isAlive = Multiply(output.Multiply, output.EnergyToGive)) != true)
+						break;
+				}
+				else if (output.Attack)
 				{
 					if ((isAlive = Attack()) != true)
 						break;
 				}
 				else
 				{
-					if ((isAlive = Rotate(output.Direction)) != true)
-						break;
-
 					if (output.Move)
 					{
-						if ((isAlive = Move(spendEnergy: true)) != true)
-						break;
+						if ((isAlive = Move()) != true)
+							break;
 					}
-					else if (output.Photosynthesis)
+					else if (output.Photosynthesis && predationEnergy == 0)
 					{
 						if ((isAlive = Photosynthesis()) != true)
 							break;
 					}
 				}
+
+				if ((isAlive = Rotate(output.Direction)) != true)
+					break;
 			}
 			while (false);
 
@@ -134,7 +148,11 @@ namespace EvolutionTest
 			input.Age = (double)Age / (double)MaxAge;
 			input.Direction = Direction;
 			input.Eye = GetCellNutritionValue(LookAt);
-			input.IsRelative = IsRelative(LookAt);
+			input.Attacked = Attacked;
+			input.AttackedDirection = AttackedDirection;
+
+			Attacked = 0;
+			AttackedDirection = -1;
 
 			return new BrainOutput(Brain.Activate(input.ToArray()));
 		}
@@ -173,23 +191,34 @@ namespace EvolutionTest
 		protected virtual bool Attack()
 		{
 			bool isAlive = true;
-			IsPredator = true;
 
 			if (LiveIn.IsInBounds(ref LookAt))
 			{
 				Entity entity = LiveIn.GetEntity(LookAt);
 				if (entity is Bot bot)
 				{
-					if (isAlive = SpendEnergy(BotAction.Attack))
+					if (FamilyID != bot.FamilyID && (isAlive = SpendEnergy(BotAction.Attack)))
 					{
-						GetEnergy(bot.Energy);
-						bot.Kill();
-						Move(spendEnergy: false);
+						double damage = bot.Energy;
+						damage = bot.Energy > damage ? damage : bot.Energy;
+
+						GetEnergy(damage);
+						bot.Energy -= damage;
+						bot.Attacked = damage;
+						bot.AttackedDirection = GetOppositeDirection(Direction);
+
+						if (bot.Energy <= 0)
+						{
+							bot.Kill();
+							isAlive = Move();
+						}
+
+						predationEnergy += damage;
 					}
 				}
 				else
 				{
-					isAlive = Move(spendEnergy: true);
+					isAlive = Move();
 				}
 			}
 
@@ -208,7 +237,7 @@ namespace EvolutionTest
 			return isAlive;
 		}
 
-		protected virtual bool Move(bool spendEnergy)
+		protected virtual bool Move()
 		{
 			bool isAlive = true;
 			IsMobile = true;
@@ -216,7 +245,7 @@ namespace EvolutionTest
 			if (LiveIn.IsInBounds(ref LookAt))
 			{
 				Entity obj = LiveIn.GetEntity(LookAt);
-				if (obj == null && (isAlive = spendEnergy ? SpendEnergy(BotAction.Move) : true))
+				if (obj == null && (isAlive = SpendEnergy(BotAction.Move)))
 				{
 					Cell from = Position;
 					Cell to = LookAt;
@@ -238,6 +267,13 @@ namespace EvolutionTest
 		#endregion
 
 		#region Utils
+
+		protected int GetOppositeDirection(int direction)
+		{
+			int index = direction + Directions.Length / 2;
+			index = index > Directions.Length - 1 ? index - Directions.Length : index;
+			return index;
+		}
 
 		protected void GetEnergy(double energy)
 		{
@@ -329,10 +365,8 @@ namespace EvolutionTest
 			double isRelative = 0;
 			
 			if (LiveIn.IsInBounds(ref cell) && 
-				LiveIn.GetEntity(cell) is Bot bot && 
-				bot.Background == Background)
+				LiveIn.GetEntity(cell) is Bot bot)
 			{
-				isRelative = 1.0f;
 			}
 
 			return isRelative;

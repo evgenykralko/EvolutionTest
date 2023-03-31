@@ -11,7 +11,8 @@ namespace EvolutionTest
 		public double Age;
 		public double Direction;
 		public double Eye;
-		public double IsRelative;
+		public double Attacked;
+		public double AttackedDirection;
 
 		public double[] ToArray()
 		{

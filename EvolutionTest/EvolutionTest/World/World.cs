@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Media;
 
 namespace EvolutionTest
@@ -15,12 +17,14 @@ namespace EvolutionTest
 		public int Width { get; private set; }
 		public int Height { get; private set; }
 
-		public Random RndGenerator = new Random();
-		public Entity[,] Entities;
+		public Random RndGenerator { get; private set; }
+		public Entity[,] Entities { get; private set; }
 		public HashSet<Entity> Bots;
 
-		public World(int width, int height, bool loopX, bool loopY)
+		public World(Random rndGenerator, int width, int height, bool loopX, bool loopY)
 		{
+			RndGenerator = rndGenerator;
+
 			Width = width;
 			Height = height;
 
@@ -35,7 +39,7 @@ namespace EvolutionTest
 
 		public void Tick()
 		{
-			foreach (Bot bot in Bots.OrderByDescending(row => row.Energy).ToArray())
+			foreach (Bot bot in Bots.OrderByDescending(row => row.Energy).ThenBy(row => row.SortOrder).ToArray())
 			{
 				if (Bots.Contains(bot))
 				{

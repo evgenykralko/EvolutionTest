@@ -14,10 +14,13 @@ namespace EvolutionTest
 		public World LiveIn;
 		public Cell Position;
 
+		public int SortOrder { get; private set; }
+
 		public Entity(World liveIn, Cell position)
 		{
 			LiveIn = liveIn;
 			Position = position;
+			SortOrder = liveIn.RndGenerator.Next();
 		}
 
 		public virtual bool Tick()

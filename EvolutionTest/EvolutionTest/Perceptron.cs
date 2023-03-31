@@ -12,10 +12,9 @@ namespace EvolutionTest
 	{
 		public List<Layer> layers;
 
-		public Perceptron(int[] neuronsPerLayer)
+		public Perceptron(int[] neuronsPerLayer, Random random)
 		{
 			layers = new List<Layer>();
-			Random random = new Random();
 
 			for (int i = 0; i < neuronsPerLayer.Length; i++)
 			{

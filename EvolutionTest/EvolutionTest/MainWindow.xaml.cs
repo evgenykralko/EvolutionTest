@@ -26,7 +26,7 @@ namespace EvolutionTest
 	public partial class MainWindow : Window
 	{
 		public const int ElementSize = 4;
-		public const int InitElementsCount = 10000;
+		public const int InitElementsCount = 100000;
 
 		public World MyWorld;
 
@@ -67,6 +67,60 @@ namespace EvolutionTest
 
 			MyWorld = new World(worldWidth, worldHeight, loopX: true, loopY: true);
 
+			GenerateEntities();
+
+			_ = Task.Run(() =>
+			{
+				while (true)
+				{
+					LogDebugInfo(() => MyWorld.Tick(), "Tick");
+					LogDebugInfo(() => DrawWorldTick(), "Rendering");
+
+					if (MyWorld.Bots.Count == 0)
+					{
+						GenerateEntities();
+					}
+				}
+			});
+		}
+
+		public void DrawWorldTick()
+		{
+			App.Current.Dispatcher.Invoke(() =>
+			{
+				WriteableBitmap writeableBmp = BitmapFactory.New((int)Width, (int)Height);
+
+				using (writeableBmp.GetBitmapContext())
+				{
+					foreach (Bot bot in MyWorld.Bots.Keys)
+					{
+						int x1 = bot.Position.X * ElementSize;
+						int y1 = bot.Position.Y * ElementSize;
+						int x2 = x1 + ElementSize - 1;
+						int y2 = y1 + ElementSize - 1;
+
+						Color color = GetBotColorByMode(bot, ColorMode);
+						double factor = (Utils.IsDarkColor(color) ? 1 : -1) * 0.2;
+						writeableBmp.FillRectangle(x1, y1, x2, y2, color);
+						writeableBmp.DrawRectangle(x1, y1, x2, y2, Utils.ChangeColorBrightness(color, factor));
+					}
+
+					Image image = new Image() { Source = writeableBmp };
+					canvas.Children.Clear();
+					canvas.Children.Add(image);
+				}
+
+				edSize.Text = $"{MyWorld.Width}x{MyWorld.Height} ({MyWorld.Width * MyWorld.Height})";
+				edSteps.Text = (++YearsCount).ToString();
+				edPopulation.Text = MyWorld.Bots.Count.ToString();
+			});
+
+			// Wait until rendering for canvas is done.
+			App.Current.Dispatcher.Invoke(DispatcherPriority.SystemIdle, new Action(() => { }));
+		}
+
+		private void GenerateEntities()
+		{
 			HashSet<Cell> botCells = new HashSet<Cell>();
 			int count = 0;
 
@@ -89,48 +143,6 @@ namespace EvolutionTest
 			}
 
 			botCells.Clear();
-
-			_ = Task.Run(() =>
-			{
-				while (true)
-				{
-					LogDebugInfo(() => MyWorld.Tick(), "Tick");
-					LogDebugInfo(() =>
-					{
-						App.Current.Dispatcher.Invoke(() =>
-						{
-							WriteableBitmap writeableBmp = BitmapFactory.New((int)Width, (int)Height);
-
-							using (writeableBmp.GetBitmapContext())
-							{
-								foreach (Bot bot in MyWorld.Bots)
-								{
-									int x1 = bot.Position.X * ElementSize;
-									int y1 = bot.Position.Y * ElementSize;
-									int x2 = x1 + ElementSize - 1;
-									int y2 = y1 + ElementSize - 1;
-
-									Color color = GetBotColorByMode(bot, ColorMode);
-									double factor = (Utils.IsDarkColor(color) ? 1 : -1) * 0.2;
-									writeableBmp.FillRectangle(x1, y1, x2, y2, color);
-									writeableBmp.DrawRectangle(x1, y1, x2, y2, Utils.ChangeColorBrightness(color, factor));
-								}
-
-								Image image = new Image() { Source = writeableBmp };
-								canvas.Children.Clear();
-								canvas.Children.Add(image);
-							}
-
-							edSize.Text = $"{worldWidth}x{worldHeight} ({worldWidth * worldHeight})";
-							edSteps.Text = (++YearsCount).ToString();
-							edPopulation.Text = MyWorld.Bots.Count.ToString();
-						});
-
-						// Wait until rendering for canvas is done.
-						App.Current.Dispatcher.Invoke(DispatcherPriority.SystemIdle, new Action(() => { }));
-					}, "Rendering");
-				}
-			});
 		}
 
 		private Color GetBotColorByMode(Bot bot, ColorModes mode)
