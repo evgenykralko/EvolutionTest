@@ -10,30 +10,29 @@ namespace EvolutionTest
 	[Serializable]
 	public class Perceptron
 	{
-		public List<Layer> layers;
+		public Layer[] layers;
+
+		public Perceptron() { }
 
 		public Perceptron(int[] neuronsPerLayer, Random random)
 		{
-			layers = new List<Layer>();
+			layers = new Layer[neuronsPerLayer.Length];
 
-			for (int i = 0; i < neuronsPerLayer.Length; i++)
+			for (int i = 0; i < layers.Length; i++)
 			{
-				layers.Add(new Layer(neuronsPerLayer[i], i == 0 ? neuronsPerLayer[i] : neuronsPerLayer[i - 1], random));
+				int numberOfInpits = i == 0 ? neuronsPerLayer[i] : neuronsPerLayer[i - 1];
+				layers[i] = new Layer(neuronsPerLayer[i], numberOfInpits, random);
 			}
-		}
-
-		public Perceptron()
-		{
 		}
 
 		public Perceptron Copy()
 		{
 			Perceptron copy = new Perceptron();
-			copy.layers = new List<Layer>();
+			copy.layers = new Layer[layers.Length];
 
-			foreach (Layer layer in layers)
+			for (int i = 0; i < layers.Length; i++)
 			{
-				copy.layers.Add(layer.Copy());
+				copy.layers[i] = layers[i].Copy();
 			}
 
 			return copy;
@@ -42,7 +41,7 @@ namespace EvolutionTest
 		public double[] Activate(double[] inputs)
 		{
 			double[] outputs = new double[0];
-			for (int i = 1; i < layers.Count; i++)
+			for (int i = 1; i < layers.Length; i++)
 			{
 				outputs = layers[i].Activate(inputs);
 				inputs = outputs;
@@ -126,15 +125,15 @@ namespace EvolutionTest
 		void SetSigmas(double[] desiredOutput)
 		{
 			sigmas = new List<double[]>();
-			for (int i = 0; i < layers.Count; i++)
+			for (int i = 0; i < layers.Length; i++)
 			{
 				sigmas.Add(new double[layers[i].numberOfNeurons]);
 			}
-			for (int i = layers.Count - 1; i >= 0; i--)
+			for (int i = layers.Length - 1; i >= 0; i--)
 			{
 				for (int j = 0; j < layers[i].numberOfNeurons; j++)
 				{
-					if (i == layers.Count - 1)
+					if (i == layers.Length - 1)
 					{
 						double y = layers[i].neurons[j].lastActivation;
 						sigmas[i][j] = (Neuron.Sigmoid(y) - desiredOutput[j]) * Neuron.SigmoidDerivated(y);
@@ -155,7 +154,7 @@ namespace EvolutionTest
 		void SetDeltas()
 		{
 			deltas = new List<double[,]>();
-			for (int i = 0; i < layers.Count; i++)
+			for (int i = 0; i < layers.Length; i++)
 			{
 				deltas.Add(new double[layers[i].numberOfNeurons, layers[i].neurons[0].weights.Length]);
 			}
@@ -163,7 +162,7 @@ namespace EvolutionTest
 
 		void AddDelta()
 		{
-			for (int i = 1; i < layers.Count; i++)
+			for (int i = 1; i < layers.Length; i++)
 			{
 				for (int j = 0; j < layers[i].numberOfNeurons; j++)
 				{
@@ -177,7 +176,7 @@ namespace EvolutionTest
 
 		void UpdateBias(double alpha)
 		{
-			for (int i = 0; i < layers.Count; i++)
+			for (int i = 0; i < layers.Length; i++)
 			{
 				for (int j = 0; j < layers[i].numberOfNeurons; j++)
 				{
@@ -188,7 +187,7 @@ namespace EvolutionTest
 
 		void UpdateWeights(double alpha)
 		{
-			for (int i = 0; i < layers.Count; i++)
+			for (int i = 0; i < layers.Length; i++)
 			{
 				for (int j = 0; j < layers[i].numberOfNeurons; j++)
 				{
@@ -263,22 +262,20 @@ namespace EvolutionTest
 	[Serializable]
 	public class Layer
 	{
-		public List<Neuron> neurons;
+		public Neuron[] neurons;
 		public int numberOfNeurons;
 		public double[] output;
+
+		public Layer() { }
 
 		public Layer(int numberOfNeurons, int numberOfInputs, Random random)
 		{
 			this.numberOfNeurons = numberOfNeurons;
-			neurons = new List<Neuron>();
+			neurons = new Neuron[numberOfNeurons];
 			for (int i = 0; i < numberOfNeurons; i++)
 			{
-				neurons.Add(new Neuron(numberOfInputs, random));
+				neurons[i] = new Neuron(numberOfInputs, random);
 			}
-		}
-
-		public Layer()
-		{
 		}
 
 		public Layer Copy()
@@ -286,11 +283,11 @@ namespace EvolutionTest
 			Layer copy = new Layer();
 			
 			copy.numberOfNeurons = numberOfNeurons;
-			copy.neurons = new List<Neuron>();
+			copy.neurons = new Neuron[numberOfNeurons];
 
 			for (int i = 0; i < numberOfNeurons; i++)
 			{
-				copy.neurons.Add(neurons[i].Copy());
+				copy.neurons[i] = neurons[i].Copy();
 			}
 
 			return copy;
@@ -298,13 +295,13 @@ namespace EvolutionTest
 
 		public double[] Activate(double[] inputs)
 		{
-			List<double> outputs = new List<double>();
+			double[] outputs = new double[numberOfNeurons];
 			for (int i = 0; i < numberOfNeurons; i++)
 			{
-				outputs.Add(neurons[i].Activate(inputs));
+				outputs[i] = neurons[i].Activate(inputs);
 			}
-			output = outputs.ToArray();
-			return outputs.ToArray();
+
+			return outputs;
 		}
 	}
 
@@ -317,6 +314,8 @@ namespace EvolutionTest
 
 		private Random random;
 
+		public Neuron() { }
+
 		public Neuron(int numberOfInputs, Random rnd)
 		{
 			random = rnd;
@@ -324,10 +323,6 @@ namespace EvolutionTest
 
 			SetRandomBias();
 			SetRandomWeights();
-		}
-
-		public Neuron()
-		{
 		}
 
 		public Neuron Copy()

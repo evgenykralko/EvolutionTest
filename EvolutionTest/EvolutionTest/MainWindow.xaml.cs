@@ -29,6 +29,7 @@ namespace EvolutionTest
 		public const int InitElementsCount = 100000;
 
 		public World MyWorld;
+		public static Random RndGenerator = new Random();
 
 		public int YearsCount { get; set; }
 		public int EntitiesCount { get; set; }
@@ -54,10 +55,26 @@ namespace EvolutionTest
 			}
 		}
 
+		public EvolutionTestDB DB { get; private set; }
+
 		public MainWindow()
 		{
 			InitializeComponent();
 			MainForm.DataContext = this;
+			DB = new EvolutionTestDB("WorldTestDB");
+			canvas.MouseWheel += Canvas_MouseWheel;
+		}
+
+		private int _scale = 0;
+
+		private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
+		{
+			_scale += e.Delta > 0 ? 1 : -1;
+
+			if (_scale < 0)
+			{
+				_scale = 0;
+			}
 		}
 
 		private void MainForm_Loaded(object sender, RoutedEventArgs e)
@@ -65,17 +82,21 @@ namespace EvolutionTest
 			int worldWidth = (int)(canvas.ActualWidth / ElementSize);
 			int worldHeight = (int)(canvas.ActualHeight / ElementSize);
 
-			MyWorld = new World(worldWidth, worldHeight, loopX: true, loopY: true);
-
+			MyWorld = new World(RndGenerator, worldWidth, worldHeight, loopX: true, loopY: true);
 			GenerateEntities();
 
 			_ = Task.Run(() =>
 			{
-				while (true)
-				{
-					LogDebugInfo(() => MyWorld.Tick(), "Tick");
-					LogDebugInfo(() => DrawWorldTick(), "Rendering");
+				const int tickCount = 1000;
+				int count = -1;
 
+				// Calculate World
+				while (++count < tickCount)
+				{
+					LogDebugInfo(() => MyWorld.Tick(), $"Tick {count} (from {tickCount}) for {MyWorld.Bots.Count} objects");
+					LogDebugInfo(() => DrawWorldTick(MyWorld.Bots), "Rendering");
+
+					// Regenerate World if all entities have died
 					if (MyWorld.Bots.Count == 0)
 					{
 						GenerateEntities();
@@ -84,35 +105,52 @@ namespace EvolutionTest
 			});
 		}
 
-		public void DrawWorldTick()
+		public void DrawWorldTick(IEnumerable<Entity> bots)
 		{
-			App.Current.Dispatcher.Invoke(() =>
+			App.Current?.Dispatcher.Invoke(() =>
 			{
 				WriteableBitmap writeableBmp = BitmapFactory.New((int)Width, (int)Height);
+				Point position = Mouse.GetPosition(this);
+
+				int count = 0;
 
 				using (writeableBmp.GetBitmapContext())
 				{
-					foreach (Bot bot in MyWorld.Bots.Keys)
-					{
-						int x1 = bot.Position.X * ElementSize;
-						int y1 = bot.Position.Y * ElementSize;
-						int x2 = x1 + ElementSize - 1;
-						int y2 = y1 + ElementSize - 1;
+					int scale = _scale;
 
-						Color color = GetBotColorByMode(bot, ColorMode);
+					foreach (Bot bot in bots)
+					{
+						int size = ElementSize;
+
+						int x1 = bot.Position.X * size - scale;
+						int y1 = bot.Position.Y * size - scale ;
+						int x2 = x1 + size - 1 + scale;
+						int y2 =y1 + size - 1 + scale;
+
+						Color color = Utils.GetBotColorByMode(bot, ColorMode);
 						double factor = (Utils.IsDarkColor(color) ? 1 : -1) * 0.2;
 						writeableBmp.FillRectangle(x1, y1, x2, y2, color);
 						writeableBmp.DrawRectangle(x1, y1, x2, y2, Utils.ChangeColorBrightness(color, factor));
-					}
 
+						count++;
+					}
+				}
+
+				if (canvas.Children.Count > 0)
+				{
+					Image image = canvas.Children[0] as Image;
+					image.Source = null;
+					image.Source = writeableBmp;
+				}
+				else
+				{
 					Image image = new Image() { Source = writeableBmp };
-					canvas.Children.Clear();
 					canvas.Children.Add(image);
 				}
 
 				edSize.Text = $"{MyWorld.Width}x{MyWorld.Height} ({MyWorld.Width * MyWorld.Height})";
 				edSteps.Text = (++YearsCount).ToString();
-				edPopulation.Text = MyWorld.Bots.Count.ToString();
+				edPopulation.Text = count.ToString();
 			});
 
 			// Wait until rendering for canvas is done.
@@ -127,15 +165,15 @@ namespace EvolutionTest
 			while (count < InitElementsCount)
 			{
 				Cell position = new Cell(
-					MyWorld.RndGenerator.Next(MyWorld.Width),
-					MyWorld.RndGenerator.Next(MyWorld.Height));
+					RndGenerator.Next(MyWorld.Width),
+					RndGenerator.Next(MyWorld.Height));
 
 				if (botCells.Add(position))
 				{
 					Color color = Color.FromRgb(
-						(byte)MyWorld.RndGenerator.Next(256),
-						(byte)MyWorld.RndGenerator.Next(256),
-						(byte)MyWorld.RndGenerator.Next(256));
+						(byte)RndGenerator.Next(256),
+						(byte)RndGenerator.Next(256),
+						(byte)RndGenerator.Next(256));
 					Bot bot = new Bot(MyWorld, position, color);
 					MyWorld.AddEntity(bot, position);
 					count++;
@@ -143,52 +181,6 @@ namespace EvolutionTest
 			}
 
 			botCells.Clear();
-		}
-
-		private Color GetBotColorByMode(Bot bot, ColorModes mode)
-		{
-			Color color = bot.Background;
-
-			switch (mode)
-			{
-				case ColorModes.Normal:
-					color = bot.Background;
-					break;
-
-				case ColorModes.Predators:
-					color = bot.IsPredator ? Colors.Red : Colors.Green;
-					break;
-
-				case ColorModes.Energy:
-					color = Utils.GetColorByLevel(Colors.Gold, Colors.Firebrick, bot.Energy / Bot.MaxEnergy);
-					break;
-
-				case ColorModes.Age:
-					color = Utils.GetColorByLevel(Colors.LightGreen, Colors.SteelBlue, (double)bot.Age / (double)Bot.MaxAge);
-					break;
-
-				case ColorModes.Mobility:
-					color = bot.IsMobile ? Colors.Coral : Colors.Gray;
-					break;
-
-				case ColorModes.Direction:
-					Color[] colors = new[]
-					{
-						Colors.Aquamarine,
-						Colors.Aqua,
-						Colors.Cyan,
-						Colors.Turquoise,
-						Colors.SpringGreen,
-						Colors.MediumTurquoise,
-						Colors.Gray,
-						Colors.MediumSpringGreen,
-					};
-
-					color = colors[bot.LiveIn.RndGenerator.Next(bot.Direction)];
-					break;
-			}
-
-			return color;
 		}
 
 		public static void LogDebugInfo(Action action, string message)

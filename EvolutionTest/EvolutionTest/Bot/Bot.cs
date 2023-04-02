@@ -14,7 +14,7 @@ namespace EvolutionTest
 	{
 		public const int InitialEnergy = 200;
 		public const int MaxEnergy = 500;
-		public const int MaxAge = 100;
+		public const int MaxAge = 30;
 		public const int MutationChance = 30;
 
 		public Perceptron Brain;
@@ -73,14 +73,14 @@ namespace EvolutionTest
 				Direction = LiveIn.RndGenerator.Next(Directions.Length);
 				FamilyID = Guid.NewGuid();
 
-				int[] definition = new int[] { 6, 7, 7, 6 };
+				int[] definition = new int[] { 6, 6, 6, 6 };
 				Brain = new Perceptron(definition, liveIn.RndGenerator);
 			}
 		}
 
 		protected virtual void Mutate()
 		{
-			for (int i = 0; i < Brain.layers.Count; i++)
+			for (int i = 0; i < Brain.layers.Length; i++)
 			{
 				int randomNeuronIndex = LiveIn.RndGenerator.Next(0, Brain.layers[i].numberOfNeurons);
 

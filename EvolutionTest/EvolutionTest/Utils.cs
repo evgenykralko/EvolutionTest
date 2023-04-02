@@ -46,14 +46,13 @@ namespace EvolutionTest
 			return Color.FromRgb((byte)r, (byte)g, (byte)b);
 		}
 
-		public static Color GetBotColorByMode(BotInfo bot, ColorModes mode)
+		public static Color GetBotColorByMode(Bot bot, ColorModes mode)
 		{
 			Color color = bot.Background;
 
 			switch (mode)
 			{
 				case ColorModes.Normal:
-					color = bot.Background;
 					break;
 
 				case ColorModes.Predators:
