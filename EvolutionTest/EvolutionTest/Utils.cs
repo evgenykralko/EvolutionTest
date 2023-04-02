@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Windows.Media;
 using static EvolutionTest.MainWindow;
@@ -8,6 +9,14 @@ namespace EvolutionTest
 {
 	public static class Utils
 	{
+		public static void LogDebugInfo(Action action, string message)
+		{
+			DateTime startTime = DateTime.Now;
+			action.Invoke();
+			TimeSpan completedTime = DateTime.Now - startTime;
+			Debug.WriteLine($"{message} action is completed in {completedTime.TotalSeconds} sec.");
+		}
+
 		public static Color ChangeColorBrightness(Color color, double correctionFactor)
 		{
 			double red = color.R;

@@ -11,15 +11,18 @@ namespace EvolutionTest
 {
 	public class World
 	{
-		private bool LoopX;
-		private bool LoopY;
-		
-		public int Width { get; private set; }
-		public int Height { get; private set; }
+		public int Population { get; private set; } = 0;
+		public int TickCount { get; private set; } = 0;
+
+		public int Width { get; private set; } = 0;
+		public int Height { get; private set; } = 0;
 
 		public Random RndGenerator { get; private set; }
 		public Entity[,] Entities { get; private set; }
 		public HashSet<Entity> Bots;
+
+		private bool LoopX;
+		private bool LoopY;
 
 		public World(Random rndGenerator, int width, int height, bool loopX, bool loopY)
 		{
@@ -49,12 +52,15 @@ namespace EvolutionTest
 					}
 				}
 			}
+
+			TickCount++;
 		}
 
 		public void AddEntity(Entity entity, Cell cell)
 		{
 			Entities[cell.Y, cell.X] = entity;
 			Bots.Add(entity);
+			Population++;
 		}
 
 		public Entity GetEntity(Cell cell)
@@ -72,6 +78,7 @@ namespace EvolutionTest
 		{
 			Entities[cell.Y, cell.X] = null;
 			Bots.Remove(entity);
+			Population--;
 		}
 
 		#endregion

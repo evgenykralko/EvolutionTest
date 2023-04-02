@@ -56,6 +56,7 @@
 			VerticalAlignment="Stretch"
 			HorizontalAlignment="Stretch"
 			Background="AliceBlue"
+			MouseWheel="Canvas_MouseWheel"
 			/>
 		<Border x:Name="panel" Background="LightGray" Height="80" VerticalAlignment="Bottom" BorderThickness="1" BorderBrush="Gray">
 			<StackPanel Orientation="Horizontal">
