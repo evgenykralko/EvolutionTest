@@ -14,9 +14,10 @@ namespace EvolutionTest
 		public double Attacked;
 		public double AttackedDirection;
 
+		private static FieldInfo[] fields = typeof(BrainInput).GetFields();
+
 		public double[] ToArray()
 		{
-			FieldInfo[] fields = GetType().GetFields();
 			double[] inputs = new double[fields.Length];
 
 			for (int i = 0; i < fields.Length; i++)

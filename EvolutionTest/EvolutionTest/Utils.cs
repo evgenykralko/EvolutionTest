@@ -55,49 +55,12 @@ namespace EvolutionTest
 			return Color.FromRgb((byte)r, (byte)g, (byte)b);
 		}
 
-		public static Color GetBotColorByMode(Bot bot, ColorModes mode)
+		public static Color GetRandomColor()
 		{
-			Color color = bot.Background;
-
-			switch (mode)
-			{
-				case ColorModes.Normal:
-					break;
-
-				case ColorModes.Predators:
-					color = bot.IsPredator ? Colors.Red : Colors.Green;
-					break;
-
-				case ColorModes.Energy:
-					color = GetColorByLevel(Colors.Gold, Colors.Firebrick, bot.Energy / Bot.MaxEnergy);
-					break;
-
-				case ColorModes.Age:
-					color = GetColorByLevel(Colors.LightGreen, Colors.SteelBlue, (double)bot.Age / (double)Bot.MaxAge);
-					break;
-
-				case ColorModes.Mobility:
-					color = bot.IsMobile ? Colors.Coral : Colors.Gray;
-					break;
-
-				case ColorModes.Direction:
-					Color[] colors = new[]
-					{
-						Colors.Aquamarine,
-						Colors.Aqua,
-						Colors.Cyan,
-						Colors.Turquoise,
-						Colors.SpringGreen,
-						Colors.MediumTurquoise,
-						Colors.Gray,
-						Colors.MediumSpringGreen,
-					};
-
-					color = colors[RndGenerator.Next(bot.Direction)];
-					break;
-			}
-
-			return color;
+			return Color.FromRgb(
+				(byte)RndGenerator.Next(256),
+				(byte)RndGenerator.Next(256),
+				(byte)RndGenerator.Next(256));
 		}
 	}
 }

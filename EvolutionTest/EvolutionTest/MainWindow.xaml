@@ -3,7 +3,6 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-		xmlns:local="clr-namespace:EvolutionTest"
 		mc:Ignorable="d"
 		Title="MainWindow" Height="450" Width="800"
 		x:Name="MainForm"
@@ -51,40 +50,55 @@
 		</Style>
 	</Window.Resources>
 	<Grid>
-		<Canvas
+		<Grid.RowDefinitions>
+			<RowDefinition Height="*"/>
+			<RowDefinition Height="auto"/>
+		</Grid.RowDefinitions>
+		<Canvas Grid.Row="0"
 			x:Name="canvas"
 			VerticalAlignment="Stretch"
 			HorizontalAlignment="Stretch"
-			Background="AliceBlue"
+			Background="Black"
 			MouseWheel="Canvas_MouseWheel"
 			/>
-		<Border x:Name="panel" Background="LightGray" Height="80" VerticalAlignment="Bottom" BorderThickness="1" BorderBrush="Gray">
-			<StackPanel Orientation="Horizontal">
-				<StackPanel Orientation="Vertical">
+		<Border Grid.Row="1" x:Name="panel" 
+			Background="LightGray" 
+			Height="100" 
+			VerticalAlignment="Bottom">
+
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="*"/>
+					<ColumnDefinition Width="*"/>
+				</Grid.ColumnDefinitions>
+				<Image Grid.Column="0" Source="pack://application:,,,/Resources/PanelFallout.png" Stretch="Fill" HorizontalAlignment="Left"/>
+				<Image Grid.Column="1" Source="pack://application:,,,/Resources/PanelFallout.png" Stretch="Fill" HorizontalAlignment="Left"/>
+				<Image Grid.Column="2" Source="pack://application:,,,/Resources/PanelFallout.png" Stretch="Fill" HorizontalAlignment="Left"/>
+				<StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center" Margin="30,4,4,4">
 					<StackPanel Orientation="Horizontal" Margin="4">
-						<TextBlock Text="Size: " FontSize="16" FontWeight="DemiBold"/>
-						<TextBlock x:Name="edSize" FontSize="16"/>
+						<TextBlock Text="Size: " Style="{DynamicResource TitleTextBlockStyle}" />
+						<TextBlock x:Name="edSize" Style="{DynamicResource ValueTextBlockStyle}"/>
 					</StackPanel>
 					<StackPanel Orientation="Horizontal" Margin="4">
-						<TextBlock Text="Display mode: " FontSize="16" FontWeight="DemiBold"/>
+						<TextBlock Text="Display mode: " Style="{DynamicResource TitleTextBlockStyle}" />
 						<ComboBox SelectionChanged="ComboBox_SelectionChanged" 
-						VerticalAlignment="Top"
-						ItemsSource="{Binding Path=ColorModesList}"
-						SelectedIndex="0"/>
+							VerticalAlignment="Top"
+							ItemsSource="{Binding Path=ColorModesList}"
+							SelectedIndex="0"/>
 					</StackPanel>
 				</StackPanel>
-				<StackPanel Orientation="Vertical">
-				<StackPanel Orientation="Horizontal" Margin="4">
-					<TextBlock Text="Steps: " FontSize="16" FontWeight="DemiBold"/>
-					<TextBlock x:Name="edSteps" FontSize="16"/>
+				<StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center" Margin="30,4,4,4">
+					<StackPanel Orientation="Horizontal" Margin="4">
+						<TextBlock Text="Steps: " Style="{DynamicResource TitleTextBlockStyle}" />
+						<TextBlock x:Name="edSteps" Style="{DynamicResource ValueTextBlockStyle}"/>
+					</StackPanel>
+					<StackPanel Orientation="Horizontal" Margin="4">
+						<TextBlock Text="Population: " Style="{DynamicResource TitleTextBlockStyle}" />
+						<TextBlock x:Name="edPopulation" Style="{DynamicResource ValueTextBlockStyle}"/>
+					</StackPanel>
 				</StackPanel>
-				<StackPanel Orientation="Horizontal" Margin="4">
-					<TextBlock Text="Population: " FontSize="16" FontWeight="DemiBold"/>
-					<TextBlock x:Name="edPopulation" FontSize="16"/>
-				</StackPanel>
-				</StackPanel>
-			</StackPanel>
+			</Grid>
 		</Border>
-		<Button Click="Button_Click" VerticalAlignment="Bottom" HorizontalAlignment="Center" Padding="10,0">▼</Button>
 	</Grid>
 </Window>

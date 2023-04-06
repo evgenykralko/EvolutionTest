@@ -18,7 +18,7 @@ namespace EvolutionTest
 		public World MyWorld;
 		public static Random RndGenerator = new Random();
 
-		public enum ColorModes { Normal, Predators, Energy, Age, Mobility, Direction }
+		public enum ColorModes { Normal, Predators, Energy, Age, Mobility, Family }
 		public ColorModes ColorMode { get; set; } = ColorModes.Normal;
 
 		private List<ColorModes> colorModesList;
@@ -76,7 +76,7 @@ namespace EvolutionTest
 		{
 			App.Current?.Dispatcher.Invoke(() =>
 			{
-				WriteableBitmap writeableBmp = BitmapFactory.New((int)Width, (int)Height);
+				WriteableBitmap writeableBmp = BitmapFactory.New((int)ActualWidth, (int)ActualHeight);
 				Point position = Mouse.GetPosition(this);
 
 				using (writeableBmp.GetBitmapContext())
@@ -93,7 +93,7 @@ namespace EvolutionTest
 						int x2 = x1 + size - 1 + scale;
 						int y2 =y1 + size - 1 + scale;
 
-						Color color = Utils.GetBotColorByMode(bot, mode);
+						Color color = GetBotColorByMode(bot, mode);
 						double factor = (Utils.IsDarkColor(color) ? 1 : -1) * 0.2;
 						writeableBmp.FillRectangle(x1, y1, x2, y2, color);
 						writeableBmp.DrawRectangle(x1, y1, x2, y2, Utils.ChangeColorBrightness(color, factor));
@@ -135,11 +135,7 @@ namespace EvolutionTest
 
 					if (botCells.Add(position))
 					{
-						Color color = Color.FromRgb(
-							(byte)RndGenerator.Next(256),
-							(byte)RndGenerator.Next(256),
-							(byte)RndGenerator.Next(256));
-						Bot bot = new Bot(MyWorld, position, color);
+						Bot bot = new Bot(MyWorld, position, Utils.GetRandomColor());
 						MyWorld.AddEntity(bot, position);
 						count++;
 					}
@@ -147,23 +143,50 @@ namespace EvolutionTest
 			}, $"Generate {InitElementsCount} entities");
 		}
 
+		private Dictionary<Guid, Color> familyColors = new Dictionary<Guid, Color>();
+
+		private Color GetBotColorByMode(Bot bot, ColorModes mode)
+		{
+			Color color = bot.Background;
+
+			switch (mode)
+			{
+				case ColorModes.Normal:
+					break;
+
+				case ColorModes.Predators:
+					color = bot.IsPredator ? Colors.Red : Colors.Green;
+					break;
+
+				case ColorModes.Energy:
+					color = Utils.GetColorByLevel(Colors.Gold, Colors.Firebrick, bot.Energy / Bot.MaxEnergy);
+					break;
+
+				case ColorModes.Age:
+					color = Utils.GetColorByLevel(Colors.LightGreen, Colors.SteelBlue, (double)bot.Age / (double)Bot.MaxAge);
+					break;
+
+				case ColorModes.Mobility:
+					color = bot.IsMobile ? Colors.Coral : Colors.Gray;
+					break;
+
+				case ColorModes.Family:
+					if (!familyColors.TryGetValue(bot.FamilyID, out color))
+					{
+						color = Utils.GetRandomColor();
+						familyColors.Add(bot.FamilyID, color);
+					}
+					break;
+			}
+
+			return color;
+		}
+
 		#region Event handlers
 
 		private void ComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
 		{
 			ColorMode = (ColorModes)e.AddedItems[0];
-		}
-
-		private void Button_Click(object sender, RoutedEventArgs e)
-		{
-			string showText = "▲";
-			string hideText = "▼";
-			
-			Button button = sender as Button;
-			bool hide = panel.Visibility == Visibility.Visible;
-
-			button.Content = hide ? showText : hideText;
-			panel.Visibility = hide ? Visibility.Collapsed : Visibility.Visible;
 		}
 
 		private int _scale = 0;

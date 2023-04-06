@@ -21,7 +21,6 @@ namespace EvolutionTest
 		public Bot Parent;
 		public Cell LookAt;
 
-		private double predationEnergy = 0;
 		public bool IsPredator => predationEnergy > 0;
 		public bool IsMobile { get; private set; }
 
@@ -30,6 +29,7 @@ namespace EvolutionTest
 		public double Attacked { get; private set; } = 0;
 		public int AttackedDirection { get; private set; } = -1;
 
+		private double predationEnergy = 0;
 		private int mutationCount = 0;
 
 		public static readonly Cell[] Directions =
@@ -53,14 +53,16 @@ namespace EvolutionTest
 			if (parent != null)
 			{
 				Parent = parent;
-				Brain = parent.Brain.Copy();
+				Brain = parent.Brain;
 				Direction = parent.Direction;
 				FamilyID = parent.FamilyID;
 				mutationCount = parent.mutationCount;
 
 				if (LiveIn.RollDice(MutationChance))
 				{
+					Brain = parent.Brain.Copy();
 					Mutate();
+
 					if (++mutationCount >= 10)
 					{
 						mutationCount = 0;
@@ -73,7 +75,7 @@ namespace EvolutionTest
 				Direction = LiveIn.RndGenerator.Next(Directions.Length);
 				FamilyID = Guid.NewGuid();
 
-				int[] definition = new int[] { 6, 6, 6, 6 };
+				int[] definition = new int[] { 6, 5, 5, 6 };
 				Brain = new Perceptron(definition, liveIn.RndGenerator);
 			}
 		}

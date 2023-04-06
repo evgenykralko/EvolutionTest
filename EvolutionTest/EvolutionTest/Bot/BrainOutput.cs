@@ -7,13 +7,6 @@ namespace EvolutionTest
 {
 	public class BrainOutput
 	{
-		private double direction;
-		private double move;
-		private double photosynthesis;
-		private double attack;
-		private double multiply;
-		private double energyToGive;
-
 		public int Direction
 		{
 			get
@@ -28,10 +21,17 @@ namespace EvolutionTest
 		public int Multiply => (int)multiply;
 		public double EnergyToGive => energyToGive;
 
+		private double direction;
+		private double move;
+		private double photosynthesis;
+		private double attack;
+		private double multiply;
+		private double energyToGive;
+
+		private static FieldInfo[] fields = typeof(BrainOutput).GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+
 		public BrainOutput(double[] outputs)
 		{
-			FieldInfo[] fields = GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
-
 			if (outputs.Length != fields.Length)
 				throw new Exception($"{typeof(BrainOutput)} fields count is not equal to {outputs} count.");
 

@@ -5,6 +5,18 @@
 	xmlns:local="clr-namespace:EvolutionTest"
 	StartupUri="MainWindow.xaml">
 	<Application.Resources>
-		<local:BotColorConverter x:Key="botColorConverter"/>
+		<Style x:Key="TitleTextBlockStyle" TargetType="{x:Type TextBlock}">
+			<Setter Property="TextWrapping" Value="NoWrap"/>
+			<Setter Property="TextTrimming" Value="None"/>
+			<Setter Property="FontSize" Value="14"/>
+			<Setter Property="FontWeight" Value="SemiBold"/>
+			<Setter Property="Foreground" Value="Gold"/>
+		</Style>
+		<Style x:Key="ValueTextBlockStyle" TargetType="{x:Type TextBlock}">
+			<Setter Property="TextWrapping" Value="NoWrap"/>
+			<Setter Property="TextTrimming" Value="None"/>
+			<Setter Property="FontSize" Value="14"/>
+			<Setter Property="Foreground" Value="Lime"/>
+		</Style>
 	</Application.Resources>
 </Application>
