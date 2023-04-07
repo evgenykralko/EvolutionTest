@@ -49,25 +49,36 @@ namespace EvolutionTest
 		{
 			int worldWidth = (int)(canvas.ActualWidth / ElementSize);
 			int worldHeight = (int)(canvas.ActualHeight / ElementSize);
-
 			MyWorld = new World(RndGenerator, worldWidth, worldHeight, loopX: true, loopY: true);
-			GenerateEntities();
 
-			App.Current.Dispatcher.Invoke(DispatcherPriority.SystemIdle, new Action(() => 
-				edSize.Text = $"{MyWorld.Width}x{MyWorld.Height} ({MyWorld.Width * MyWorld.Height})"));
+			App.Current.Dispatcher.Invoke(DispatcherPriority.SystemIdle, new Action(() =>
+			{
+				edSize.Text = $"{MyWorld.Width}x{MyWorld.Height} ({MyWorld.Width * MyWorld.Height} cells)";
+				edWorld.Text = Guid.NewGuid().ToString();
+				edSteps.Text = MyWorld.TickCount.ToString();
+				edPopulation.Text = MyWorld.Population.ToString();
+			}));
 
 			_ = Task.Run(() =>
 			{
 				while (true)
 				{
-					Utils.LogDebugInfo(() => MyWorld.Tick(), $"Tick {MyWorld.TickCount} for {MyWorld.Population} objects");
-					Utils.LogDebugInfo(() => DrawWorldTick(), $"Rendering for {MyWorld.Population} objects");
-
-					// Regenerate World if all entities have died
 					if (MyWorld.Population == 0)
 					{
 						GenerateEntities();
+						resetRequested = false;
 					}
+					else
+					{
+						Utils.LogDebugInfo(() => MyWorld.Tick(), $"Tick {MyWorld.TickCount} for {MyWorld.Population} objects");
+					}
+
+					if (resetRequested)
+					{
+						MyWorld.Clear();
+					}
+
+					Utils.LogDebugInfo(() => DrawWorldTick(), $"Rendering for {MyWorld.Population} objects");
 				}
 			});
 		}
@@ -122,6 +133,11 @@ namespace EvolutionTest
 
 		private void GenerateEntities()
 		{
+			App.Current.Dispatcher.Invoke(DispatcherPriority.SystemIdle, new Action(() =>
+			{
+				edLoading.Visibility = Visibility.Visible;
+			}));
+
 			Utils.LogDebugInfo(() => 
 			{
 				HashSet<Cell> botCells = new HashSet<Cell>();
@@ -141,6 +157,11 @@ namespace EvolutionTest
 					}
 				}
 			}, $"Generate {InitElementsCount} entities");
+
+			App.Current.Dispatcher.Invoke(DispatcherPriority.SystemIdle, new Action(() =>
+			{
+				edLoading.Visibility = Visibility.Hidden;
+			}));
 		}
 
 		private Dictionary<Guid, Color> familyColors = new Dictionary<Guid, Color>();
@@ -189,7 +210,7 @@ namespace EvolutionTest
 			ColorMode = (ColorModes)e.AddedItems[0];
 		}
 
-		private int _scale = 0;
+		private int _scale = 2;
 		private void Canvas_MouseWheel(object sender, MouseWheelEventArgs e)
 		{
 			_scale += e.Delta > 0 ? 1 : -1;
@@ -201,5 +222,12 @@ namespace EvolutionTest
 		}
 
 		#endregion
+
+		private bool resetRequested = false;
+
+		private void ResetButton_Click(object sender, RoutedEventArgs e)
+		{
+			resetRequested = true;
+		}
 	}
 }

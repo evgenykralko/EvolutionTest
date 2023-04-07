@@ -3,6 +3,7 @@
 		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
 		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
 		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:gif="http://wpfanimatedgif.codeplex.com"
 		mc:Ignorable="d"
 		Title="MainWindow" Height="450" Width="800"
 		x:Name="MainForm"
@@ -61,6 +62,10 @@
 			Background="Black"
 			MouseWheel="Canvas_MouseWheel"
 			/>
+		<StackPanel x:Name="edLoading" Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+			<Image Width="16px" Height="16px" gif:ImageBehavior.AnimatedSource="Resources/InProgress.gif" Margin="0,0,5,0"/>
+			<TextBlock Style="{StaticResource ValueTextBlockStyle}" Text="Generating new objects"/>
+		</StackPanel>
 		<Border Grid.Row="1" x:Name="panel" 
 			Background="LightGray" 
 			Height="100" 
@@ -72,32 +77,62 @@
 					<ColumnDefinition Width="*"/>
 					<ColumnDefinition Width="*"/>
 				</Grid.ColumnDefinitions>
-				<Image Grid.Column="0" Source="pack://application:,,,/Resources/PanelFallout.png" Stretch="Fill" HorizontalAlignment="Left"/>
-				<Image Grid.Column="1" Source="pack://application:,,,/Resources/PanelFallout.png" Stretch="Fill" HorizontalAlignment="Left"/>
-				<Image Grid.Column="2" Source="pack://application:,,,/Resources/PanelFallout.png" Stretch="Fill" HorizontalAlignment="Left"/>
-				<StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center" Margin="30,4,4,4">
-					<StackPanel Orientation="Horizontal" Margin="4">
-						<TextBlock Text="Size: " Style="{DynamicResource TitleTextBlockStyle}" />
-						<TextBlock x:Name="edSize" Style="{DynamicResource ValueTextBlockStyle}"/>
+				<Image Grid.Column="0" Source="Resources/PanelFallout.png" Stretch="Fill" HorizontalAlignment="Left"/>
+				<Image Grid.Column="1" Source="Resources/PanelFallout.png" Stretch="Fill" HorizontalAlignment="Left"/>
+				<Image Grid.Column="2" Source="Resources/PanelFallout.png" Stretch="Fill" HorizontalAlignment="Left"/>
+				
+				<Grid Grid.Column="0">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition/>
+					</Grid.ColumnDefinitions>
+					<StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="30,4,4,4">
+						<StackPanel Orientation="Horizontal" Margin="0">
+							<TextBlock Text="World: " Style="{DynamicResource TitleTextBlockStyle}" />
+							<TextBlock x:Name="edWorld" Style="{DynamicResource ValueTextBlockStyle}"/>
+						</StackPanel>
+						<StackPanel Orientation="Horizontal" Margin="0">
+							<TextBlock Text="Size: " Style="{DynamicResource TitleTextBlockStyle}" />
+							<TextBlock x:Name="edSize" Style="{DynamicResource ValueTextBlockStyle}"/>
+						</StackPanel>
 					</StackPanel>
-					<StackPanel Orientation="Horizontal" Margin="4">
-						<TextBlock Text="Display mode: " Style="{DynamicResource TitleTextBlockStyle}" />
-						<ComboBox SelectionChanged="ComboBox_SelectionChanged" 
+				</Grid>
+
+				<Grid Grid.Column="1">
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition/>
+					</Grid.ColumnDefinitions>
+					<StackPanel Orientation="Vertical" VerticalAlignment="Center" Margin="30,4,4,4">
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Text="Steps: " Style="{DynamicResource TitleTextBlockStyle}" />
+							<TextBlock x:Name="edSteps" Style="{DynamicResource ValueTextBlockStyle}"/>
+						</StackPanel>
+						<StackPanel Orientation="Horizontal">
+							<TextBlock Text="Population: " Style="{DynamicResource TitleTextBlockStyle}" />
+							<TextBlock x:Name="edPopulation" Style="{DynamicResource ValueTextBlockStyle}"/>
+						</StackPanel>
+					</StackPanel>
+				</Grid>
+
+				<Grid Grid.Column="2" >
+					<Grid.ColumnDefinitions>
+						<ColumnDefinition/>
+						<ColumnDefinition/>
+					</Grid.ColumnDefinitions>
+					<StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center" Margin="30,4,4,4">
+						<StackPanel Orientation="Horizontal" Margin="0">
+							<TextBlock Text="Display mode: " Style="{DynamicResource TitleTextBlockStyle}" />
+							<ComboBox Style="{DynamicResource ComboBoxStyle}" SelectionChanged="ComboBox_SelectionChanged" 
 							VerticalAlignment="Top"
 							ItemsSource="{Binding Path=ColorModesList}"
 							SelectedIndex="0"/>
+						</StackPanel>
 					</StackPanel>
-				</StackPanel>
-				<StackPanel Grid.Column="1" Orientation="Vertical" VerticalAlignment="Center" Margin="30,4,4,4">
-					<StackPanel Orientation="Horizontal" Margin="4">
-						<TextBlock Text="Steps: " Style="{DynamicResource TitleTextBlockStyle}" />
-						<TextBlock x:Name="edSteps" Style="{DynamicResource ValueTextBlockStyle}"/>
-					</StackPanel>
-					<StackPanel Orientation="Horizontal" Margin="4">
-						<TextBlock Text="Population: " Style="{DynamicResource TitleTextBlockStyle}" />
-						<TextBlock x:Name="edPopulation" Style="{DynamicResource ValueTextBlockStyle}"/>
-					</StackPanel>
-				</StackPanel>
+					<Button Grid.Column="1" Style="{DynamicResource ButtonResetStyle}" 
+						HorizontalAlignment="Right" 
+						VerticalAlignment="Center" 
+						Margin="4,4,30,4"
+						Click="ResetButton_Click">RESET</Button>
+				</Grid>
 			</Grid>
 		</Border>
 	</Grid>

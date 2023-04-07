@@ -38,6 +38,15 @@ namespace EvolutionTest
 			Bots = new HashSet<Entity>();
 		}
 
+		public void Clear()
+		{
+			Entities = new Entity[Height, Width];
+			Bots = new HashSet<Entity>();
+
+			Population = 0;
+			TickCount = 0;
+		}
+
 		#region Actions
 
 		public void Tick()
