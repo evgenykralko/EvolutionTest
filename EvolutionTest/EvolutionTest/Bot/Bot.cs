@@ -22,6 +22,7 @@ namespace EvolutionTest
 		public Cell LookAt;
 
 		public bool IsPredator => predationEnergy > 0;
+		public bool IsPS => photosynthesisEnergy > 0;
 		public bool IsMobile { get; private set; }
 
 		public Guid FamilyID { get; private set; }
@@ -30,6 +31,7 @@ namespace EvolutionTest
 		public int AttackedDirection { get; private set; } = -1;
 
 		private double predationEnergy = 0;
+		private double photosynthesisEnergy = 0;
 		private int mutationCount = 0;
 
 		public static readonly Cell[] Directions =
@@ -262,7 +264,9 @@ namespace EvolutionTest
 
 		protected virtual bool Photosynthesis()
 		{
-			GetEnergy(25.0f);
+			double value = 25.0;
+			GetEnergy(value);
+			photosynthesisEnergy += value;
 			return true;
 		}
 
@@ -296,7 +300,7 @@ namespace EvolutionTest
 			switch (action)
 			{
 				case BotAction.Tick:
-					cost = 0; break;
+					cost = 5; break;
 				case BotAction.Attack:
 					cost = 10; break;
 				case BotAction.EatOrganics:

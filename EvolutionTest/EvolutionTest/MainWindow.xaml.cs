@@ -13,7 +13,7 @@ namespace EvolutionTest
 	public partial class MainWindow : Window
 	{
 		public const int ElementSize = 4;
-		public const int InitElementsCount = 100000;
+		public const int InitElementsPercent = 50;
 
 		public World MyWorld;
 		public static Random RndGenerator = new Random();
@@ -63,21 +63,15 @@ namespace EvolutionTest
 			{
 				while (true)
 				{
-					if (MyWorld.Population == 0)
+					if (MyWorld.Population == 0 || resetRequested)
 					{
+						MyWorld.Clear();
+						DrawWorldTick();
 						GenerateEntities();
 						resetRequested = false;
 					}
-					else
-					{
-						Utils.LogDebugInfo(() => MyWorld.Tick(), $"Tick {MyWorld.TickCount} for {MyWorld.Population} objects");
-					}
 
-					if (resetRequested)
-					{
-						MyWorld.Clear();
-					}
-
+					Utils.LogDebugInfo(() => MyWorld.Tick(), $"Tick {MyWorld.TickCount} for {MyWorld.Population} objects");
 					Utils.LogDebugInfo(() => DrawWorldTick(), $"Rendering for {MyWorld.Population} objects");
 				}
 			});
@@ -105,7 +99,7 @@ namespace EvolutionTest
 						int y2 =y1 + size - 1 + scale;
 
 						Color color = GetBotColorByMode(bot, mode);
-						double factor = (Utils.IsDarkColor(color) ? 1 : -1) * 0.2;
+						double factor = -0.2; // (Utils.IsDarkColor(color) ? 1 : -1) * 0.2;
 						writeableBmp.FillRectangle(x1, y1, x2, y2, color);
 						writeableBmp.DrawRectangle(x1, y1, x2, y2, Utils.ChangeColorBrightness(color, factor));
 					}
@@ -133,6 +127,8 @@ namespace EvolutionTest
 
 		private void GenerateEntities()
 		{
+			int elementsCount = MyWorld.Height * MyWorld.Width / 100 * InitElementsPercent;
+
 			App.Current.Dispatcher.Invoke(DispatcherPriority.SystemIdle, new Action(() =>
 			{
 				edLoading.Visibility = Visibility.Visible;
@@ -143,7 +139,7 @@ namespace EvolutionTest
 				HashSet<Cell> botCells = new HashSet<Cell>();
 				int count = 0;
 
-				while (count < InitElementsCount)
+				while (count < elementsCount)
 				{
 					Cell position = new Cell(
 						RndGenerator.Next(MyWorld.Width),
@@ -156,7 +152,7 @@ namespace EvolutionTest
 						count++;
 					}
 				}
-			}, $"Generate {InitElementsCount} entities");
+			}, $"Generate {elementsCount} entities");
 
 			App.Current.Dispatcher.Invoke(DispatcherPriority.SystemIdle, new Action(() =>
 			{
@@ -176,7 +172,7 @@ namespace EvolutionTest
 					break;
 
 				case ColorModes.Predators:
-					color = bot.IsPredator ? Colors.Red : Colors.Green;
+					color = bot.IsPredator ? Color.FromRgb(251, 67, 67) : Color.FromRgb(38, 164, 38);
 					break;
 
 				case ColorModes.Energy:
@@ -184,7 +180,7 @@ namespace EvolutionTest
 					break;
 
 				case ColorModes.Age:
-					color = Utils.GetColorByLevel(Colors.LightGreen, Colors.SteelBlue, (double)bot.Age / (double)Bot.MaxAge);
+					color = Utils.GetColorByLevel(Colors.MediumSpringGreen, Colors.DarkCyan, (double)bot.Age / (double)Bot.MaxAge);
 					break;
 
 				case ColorModes.Mobility:
