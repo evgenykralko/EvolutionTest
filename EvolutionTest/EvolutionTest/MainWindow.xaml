@@ -121,10 +121,10 @@
 					<StackPanel Grid.Column="0" Orientation="Vertical" VerticalAlignment="Center" Margin="30,4,4,4">
 						<StackPanel Orientation="Horizontal" Margin="0">
 							<TextBlock Text="Display mode: " Style="{DynamicResource TitleTextBlockStyle}" />
-							<ComboBox Style="{DynamicResource ComboBoxStyle}" SelectionChanged="ComboBox_SelectionChanged" 
+							<ComboBox Style="{DynamicResource ComboBoxStyle}" 
 							VerticalAlignment="Top"
-							ItemsSource="{Binding Path=ColorModesList}"
-							SelectedIndex="0"/>
+							ItemsSource="{Binding ColorModesList}"
+							SelectedItem="{Binding ColorMode}"/>
 						</StackPanel>
 					</StackPanel>
 					<Button Grid.Column="1" Style="{DynamicResource ButtonResetStyle}" 

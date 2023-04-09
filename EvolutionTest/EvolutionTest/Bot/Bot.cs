@@ -13,8 +13,8 @@ namespace EvolutionTest
 	public class Bot : Entity
 	{
 		public const int InitialEnergy = 200;
-		public const int MaxEnergy = 500;
-		public const int MaxAge = 30;
+		public const int MaxEnergy = 1000;
+		public const int MaxAge = 1000;
 		public const int MutationChance = 30;
 
 		public Perceptron Brain;
@@ -46,16 +46,17 @@ namespace EvolutionTest
 			new Cell(-1, -1)
 		};
 
-		public Bot(World liveIn, Cell position, Color color, Bot parent = null, double energy = InitialEnergy)
+		public Bot(World liveIn, Cell position, Bot parent = null, double energy = InitialEnergy)
 			: base(liveIn, position)
 		{
 			Energy = energy;
-			Background = color;
 
 			if (parent != null)
 			{
 				Parent = parent;
 				Brain = parent.Brain;
+
+				Background = parent.Background;
 				Direction = parent.Direction;
 				FamilyID = parent.FamilyID;
 				mutationCount = parent.mutationCount;
@@ -74,6 +75,7 @@ namespace EvolutionTest
 			}
 			else
 			{
+				Background = Utils.GetRandomColor();
 				Direction = LiveIn.RndGenerator.Next(Directions.Length);
 				FamilyID = Guid.NewGuid();
 
@@ -181,7 +183,7 @@ namespace EvolutionTest
 						Energy -= toGive;
 						SpendEnergy(BotAction.Multiply);
 
-						Bot child = new Bot(LiveIn, freeSpace, Background, this, toGive);
+						Bot child = new Bot(LiveIn, freeSpace, this, toGive);
 						LiveIn.AddEntity(child, freeSpace);
 					}
 					else break;
@@ -303,8 +305,6 @@ namespace EvolutionTest
 					cost = 5; break;
 				case BotAction.Attack:
 					cost = 10; break;
-				case BotAction.EatOrganics:
-					cost = 8; break;
 				case BotAction.Move:
 					cost = 1; break;
 				case BotAction.Rotate:
@@ -364,18 +364,6 @@ namespace EvolutionTest
 			}
 
 			return energy;
-		}
-
-		protected double IsRelative(Cell cell)
-		{
-			double isRelative = 0;
-			
-			if (LiveIn.IsInBounds(ref cell) && 
-				LiveIn.GetEntity(cell) is Bot bot)
-			{
-			}
-
-			return isRelative;
 		}
 
 		#endregion

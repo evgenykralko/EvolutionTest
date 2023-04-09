@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using static EvolutionTest.MainWindow;
 
 namespace EvolutionTest
@@ -61,6 +63,19 @@ namespace EvolutionTest
 				(byte)RndGenerator.Next(256),
 				(byte)RndGenerator.Next(256),
 				(byte)RndGenerator.Next(256));
+		}
+
+		public static void SaveScreenshoot(string filePath)
+		{
+			RenderTargetBitmap render = 
+				new RenderTargetBitmap((int)App.Current.MainWindow.ActualWidth, (int)App.Current.MainWindow.ActualHeight, 96, 96, PixelFormats.Pbgra32);
+			render.Render(App.Current.MainWindow);
+			BmpBitmapEncoder encoder = new BmpBitmapEncoder();
+			encoder.Frames.Add(BitmapFrame.Create(render));
+			using (Stream fileStream = File.Create(filePath + ".bmp"))
+			{
+				encoder.Save(fileStream);
+			}
 		}
 	}
 }

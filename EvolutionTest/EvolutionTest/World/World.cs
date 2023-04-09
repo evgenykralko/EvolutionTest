@@ -11,6 +11,8 @@ namespace EvolutionTest
 {
 	public class World
 	{
+		public Guid Id { get; private set; }
+
 		public int Population { get; private set; } = 0;
 		public int TickCount { get; private set; } = 0;
 
@@ -26,6 +28,7 @@ namespace EvolutionTest
 
 		public World(Random rndGenerator, int width, int height, bool loopX, bool loopY)
 		{
+			Id = Guid.NewGuid();
 			RndGenerator = rndGenerator;
 
 			Width = width;
