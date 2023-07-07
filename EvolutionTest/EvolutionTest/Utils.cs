@@ -70,9 +70,9 @@ namespace EvolutionTest
 			RenderTargetBitmap render = 
 				new RenderTargetBitmap((int)App.Current.MainWindow.ActualWidth, (int)App.Current.MainWindow.ActualHeight, 96, 96, PixelFormats.Pbgra32);
 			render.Render(App.Current.MainWindow);
-			BmpBitmapEncoder encoder = new BmpBitmapEncoder();
+			PngBitmapEncoder encoder = new PngBitmapEncoder();
 			encoder.Frames.Add(BitmapFrame.Create(render));
-			using (Stream fileStream = File.Create(filePath + ".bmp"))
+			using (Stream fileStream = File.Create(filePath + ".png"))
 			{
 				encoder.Save(fileStream);
 			}

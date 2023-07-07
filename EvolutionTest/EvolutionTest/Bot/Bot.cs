@@ -203,7 +203,7 @@ namespace EvolutionTest
 				Entity entity = LiveIn.GetEntity(LookAt);
 				if (entity is Bot bot)
 				{
-					if (FamilyID != bot.FamilyID && (isAlive = SpendEnergy(BotAction.Attack)))
+					if (CanAttack(this, bot) && (isAlive = SpendEnergy(BotAction.Attack)))
 					{
 						double damage = bot.Energy;
 						damage = bot.Energy > damage ? damage : bot.Energy;
@@ -229,6 +229,11 @@ namespace EvolutionTest
 			}
 
 			return isAlive;
+		}
+
+		protected virtual bool CanAttack(Bot attacker, Bot enemy)
+		{
+			return attacker.FamilyID != enemy.FamilyID;
 		}
 
 		protected virtual bool Rotate(int desiredDirection)

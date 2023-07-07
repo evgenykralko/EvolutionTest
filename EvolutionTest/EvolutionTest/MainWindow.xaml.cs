@@ -24,7 +24,7 @@ namespace EvolutionTest
 
 		#endregion
 
-		public bool SaveScreenshot = true;
+		public bool SaveScreenshot = false;
 		public const string SaveScreenshotFolder = "E:/EvolutionTest";
 		public const int SaveScreenshotStep = 100;
 
@@ -99,31 +99,37 @@ namespace EvolutionTest
 					Utils.LogDebugInfo(() => MyWorld.Tick(), $"Tick {MyWorld.TickCount} for {MyWorld.Population} objects");
 					Utils.LogDebugInfo(() => DrawWorldTick(), $"Rendering for {MyWorld.Population} objects");
 
-					//Capture screenshot
 					if (SaveScreenshot && MyWorld.TickCount > 0 && MyWorld.TickCount % SaveScreenshotStep == 0)
 					{
-						string folder = Path.Combine(SaveScreenshotFolder, $"World{MyWorld.Id}");
-						Directory.CreateDirectory(folder);
-
-						ColorModes origMode = ColorMode;
-						foreach (ColorModes mode in Enum.GetValues(typeof(ColorModes)))
-						{
-							string fileName = $"{mode}{MyWorld.TickCount}";
-							string filePath = Path.Combine(folder, fileName);
-
-							if (mode != origMode)
-							{
-								ColorMode = mode;
-								DrawWorldTick();
-							}
-
-							App.Current?.Dispatcher.Invoke(() => Utils.SaveScreenshoot(filePath));
-						}
-
-						ColorMode = origMode;
+						CaptureScreenshoots();
 					}
 				}
 			});
+		}
+
+		public void CaptureScreenshoots()
+		{
+			string folder = Path.Combine(SaveScreenshotFolder, $"World{MyWorld.Id}");
+			Directory.CreateDirectory(folder);
+
+			ColorModes origMode = ColorMode;
+			foreach (ColorModes mode in Enum.GetValues(typeof(ColorModes)))
+			{
+				if (mode == ColorModes.Family || mode == ColorModes.Mobility) continue;
+
+				string fileName = $"{mode}{MyWorld.TickCount}";
+				string filePath = Path.Combine(folder, fileName);
+
+				if (mode != origMode)
+				{
+					ColorMode = mode;
+					DrawWorldTick();
+				}
+
+				App.Current?.Dispatcher.Invoke(() => Utils.SaveScreenshoot(filePath));
+			}
+
+			ColorMode = origMode;
 		}
 
 		public void DrawWorldTick()
